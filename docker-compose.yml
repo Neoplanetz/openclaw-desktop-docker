@@ -1,0 +1,43 @@
+# ============================================================
+# docker-compose.yml — OpenClaw Desktop Environment
+# ============================================================
+
+services:
+  openclaw-desktop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openclaw-desktop
+    hostname: openclaw
+
+    # ── Environment ──
+    environment:
+      - USER=claw
+      - PASSWORD=claw1234          # Change to desired password
+      - VNC_RESOLUTION=1920x1080
+      - VNC_COL_DEPTH=24
+      - TZ=Asia/Seoul
+
+    # ── Port mapping ──
+    ports:
+      - "6080:6080"   # NoVNC  -> http://localhost:6080/vnc.html
+      - "5901:5901"   # VNC    -> VNC client
+      - "3389:3389"   # RDP    -> Remote desktop
+      - "18789:18789" # OpenClaw Gateway / Dashboard
+
+    # ── Volumes (data persistence) ──
+    volumes:
+      - openclaw-home:/home/claw   # Persist home dir (includes OpenClaw config)
+
+    # ── Resources ──
+    shm_size: "2gb"                # Shared memory (GUI rendering)
+
+    # ── Security (needed for browser in container) ──
+    security_opt:
+      - seccomp=unconfined
+
+    restart: unless-stopped
+
+volumes:
+  openclaw-home:
+    name: openclaw-home
