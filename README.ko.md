@@ -8,7 +8,10 @@ Node.js 22, OpenClaw, Google Chrome, 기본 Gateway 설정이 모두 사전 설�
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/neoplanetz) [![CTEE](https://img.shields.io/badge/CTEE-커피%20한%20잔-FF5722?style=for-the-badge)](https://ctee.kr/place/neoplanetz)
 
-![OpenClaw Docker Desktop](dockerized_openclaw.png)
+<p>
+  <img src="dockerized_openclaw.png" width="49%" />
+  <img src="openclaw_desktop_web.png" width="49%" />
+</p>
 
 > **Docker가 처음이신가요?** 스크린샷과 함께 하나하나 따라할 수 있는 [완전 초보자 가이드](GUIDE_FOR_BEGINNERS.md)를 확인해 보세요.
 
