@@ -10,6 +10,8 @@ Node.js 22、OpenClaw、Google Chrome、デフォルトのGateway設定がすべ
 
 ![OpenClaw Docker Desktop](dockerized_openclaw.png)
 
+> **Dockerが初めてですか？** スクリーンショット付きの[完全初心者ガイド](GUIDE_FOR_BEGINNERS.ja.md)をご覧ください。
+
 ## 含まれるコンポーネント
 
 | コンポーネント | 詳細 |

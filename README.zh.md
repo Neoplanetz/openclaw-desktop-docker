@@ -10,6 +10,8 @@
 
 ![OpenClaw Docker Desktop](dockerized_openclaw.png)
 
+> **第一次使用 Docker？** 请查看[完全新手指南](GUIDE_FOR_BEGINNERS.zh.md)，包含截图的分步说明。
+
 ## 包含组件
 
 | 组件 | 详情 |
