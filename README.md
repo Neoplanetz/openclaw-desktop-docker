@@ -42,19 +42,26 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 
 - Docker Engine 20+
 
-### Build & Run
+### Run from Docker Hub (Recommended)
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 Or standalone:
 ```bash
-docker build -t openclaw-desktop .
+docker pull neoplanetz/openclaw-desktop-docker:latest
 docker run -d --name openclaw-desktop \
   -p 6080:6080 -p 5901:5901 -p 3389:3389 -p 18789:18789 \
   --shm-size=2g --security-opt seccomp=unconfined \
-  openclaw-desktop
+  neoplanetz/openclaw-desktop-docker:latest
+```
+
+### Build from Source
+
+If you want to build the image yourself:
+```bash
+docker compose up -d --build
 ```
 
 ## Connecting to the Desktop

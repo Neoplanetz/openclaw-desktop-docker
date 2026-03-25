@@ -4,6 +4,7 @@
 
 services:
   openclaw-desktop:
+    image: neoplanetz/openclaw-desktop-docker:latest
     build:
       context: .
       dockerfile: Dockerfile

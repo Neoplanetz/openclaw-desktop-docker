@@ -42,19 +42,26 @@ Node.js 22、OpenClaw、Google Chrome、デフォルトのGateway設定がすべ
 
 - Docker Engine 20+
 
-### ビルドと実行
+### Docker Hub から実行（推奨）
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 または単独実行：
 ```bash
-docker build -t openclaw-desktop .
+docker pull neoplanetz/openclaw-desktop-docker:latest
 docker run -d --name openclaw-desktop \
   -p 6080:6080 -p 5901:5901 -p 3389:3389 -p 18789:18789 \
   --shm-size=2g --security-opt seccomp=unconfined \
-  openclaw-desktop
+  neoplanetz/openclaw-desktop-docker:latest
+```
+
+### ソースからビルド
+
+イメージを自分でビルドする場合：
+```bash
+docker compose up -d --build
 ```
 
 ## デスクトップへの接続

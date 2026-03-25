@@ -42,19 +42,26 @@
 
 - Docker Engine 20+
 
-### 构建与运行
+### 从 Docker Hub 运行（推荐）
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 或单独运行：
 ```bash
-docker build -t openclaw-desktop .
+docker pull neoplanetz/openclaw-desktop-docker:latest
 docker run -d --name openclaw-desktop \
   -p 6080:6080 -p 5901:5901 -p 3389:3389 -p 18789:18789 \
   --shm-size=2g --security-opt seccomp=unconfined \
-  openclaw-desktop
+  neoplanetz/openclaw-desktop-docker:latest
+```
+
+### 从源代码构建
+
+如果您想自己构建镜像：
+```bash
+docker compose up -d --build
 ```
 
 ## 连接桌面
