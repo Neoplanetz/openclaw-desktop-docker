@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Changing `USER` in docker-compose.yml no longer causes login failures (user is now created at runtime)
 - Changing `PASSWORD` now applies to both VNC and RDP/sudo login (previously only VNC was updated at runtime)
+- XFCE panels (menu bar, dock) now appear correctly for new users — system defaults are copied before wallpaper config to prevent XFCE from skipping first-run panel initialization
 
 ## [1.0.0] - 2026-03-25
 

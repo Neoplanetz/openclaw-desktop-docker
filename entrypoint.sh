@@ -205,6 +205,13 @@ WALLPAPER="/usr/share/backgrounds/dockerized_openclaw.png"
 XFCE_CONF_DIR="/home/${USER}/.config/xfce4/xfconf/xfce-perchannel-xml"
 mkdir -p "${XFCE_CONF_DIR}"
 
+# Copy system XFCE4 defaults first (panel layout, session config, etc.)
+# Without this, XFCE skips first-run panel initialization when it sees
+# a partially populated xfconf directory (our wallpaper XML below).
+if [ ! -f "${XFCE_CONF_DIR}/xfce4-panel.xml" ]; then
+    cp -rn /etc/xdg/xfce4/. "/home/${USER}/.config/xfce4/" 2>/dev/null || true
+fi
+
 # Generate workspace block helper (4 workspaces)
 ws_block() {
     local img="$1"
@@ -238,7 +245,7 @@ $(ws_block "${WALLPAPER}")
   </property>
 </channel>
 WALLEOF
-chown -R ${USER}:${USER} "${XFCE_CONF_DIR}"
+chown -R ${USER}:${USER} "/home/${USER}/.config/xfce4"
 
 # ── Regenerate xstartup (overwrite cached version from volume) ─────
 cat > /home/${USER}/.vnc/xstartup << 'XSTARTUP'
