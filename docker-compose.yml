@@ -1,6 +1,9 @@
 # ============================================================
 # docker-compose.yml — OpenClaw Desktop Environment
 # ============================================================
+# User/password settings are in .env file (same directory).
+# Edit .env and run:  docker compose up -d --build
+# ============================================================
 
 services:
   openclaw-desktop:
@@ -13,8 +16,8 @@ services:
 
     # ── Environment ──
     environment:
-      - USER=claw
-      - PASSWORD=claw1234          # Change to desired password
+      - USER=${CLAW_USER:-claw}
+      - PASSWORD=${CLAW_PASSWORD:-claw1234}
       - VNC_RESOLUTION=1920x1080
       - VNC_COL_DEPTH=24
       - TZ=Asia/Seoul
@@ -28,7 +31,7 @@ services:
 
     # ── Volumes (data persistence) ──
     volumes:
-      - openclaw-home:/home/claw   # Persist home dir (includes OpenClaw config)
+      - openclaw-home:/home/${CLAW_USER:-claw}
 
     # ── Resources ──
     shm_size: "2gb"                # Shared memory (GUI rendering)

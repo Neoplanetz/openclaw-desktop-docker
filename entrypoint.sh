@@ -8,6 +8,26 @@ NOVNC_PORT="${NOVNC_PORT:-6080}"
 VNC_RESOLUTION="${VNC_RESOLUTION:-1920x1080}"
 VNC_COL_DEPTH="${VNC_COL_DEPTH:-24}"
 
+# ── Dynamic user creation ────────────────────────────────
+# Creates the Linux user at runtime so that USER/PASSWORD
+# from docker-compose environment (or .env) take effect.
+if ! id "${USER}" &>/dev/null; then
+    echo ">> Creating user '${USER}'..."
+    useradd -m -s /bin/bash "${USER}"
+    usermod -aG sudo "${USER}"
+    echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/"${USER}"
+    chmod 0440 /etc/sudoers.d/"${USER}"
+
+    # Initialize home directory from build-time templates
+    if [ -d /opt/openclaw-defaults ]; then
+        cp -a /opt/openclaw-defaults/. /home/${USER}/
+        chown -R ${USER}:${USER} /home/${USER}
+    fi
+fi
+
+# Always sync password (handles password-only changes without rebuild)
+echo "${USER}:${PASSWORD}" | chpasswd
+
 echo "============================================"
 echo " OpenClaw Docker Environment"
 echo "============================================"

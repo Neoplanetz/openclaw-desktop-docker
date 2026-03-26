@@ -68,7 +68,7 @@ docker compose up -d --build
 
 ### Web 浏览器（NoVNC）
 
-打开 `http://localhost:6080/vnc.html`，输入 VNC 密码（`claw1234`）。
+打开 `http://localhost:6080/vnc.html`，输入 VNC 密码（默认：`claw1234`，可在 `.env` 文件中修改）。
 
 ### RDP（远程桌面）
 
@@ -77,7 +77,7 @@ docker compose up -d --build
 - **macOS**：Microsoft Remote Desktop
 - **Linux**：Remmina
 
-登录信息：`claw` / `claw1234`（域名留空）。
+使用配置的用户名和密码登录（默认：`claw` / `claw1234`，可在 `.env` 文件中修改）。域名留空。
 
 ### VNC 客户端
 
@@ -183,19 +183,38 @@ openclaw dashboard           # 使用自动登录令牌打开仪表板
 - `controlUi.allowedOrigins: ["*"]` — 允许任何来源访问仪表板（Docker 内部需要）
 - 默认未配置 AI 模型 — 通过引导向导或 CLI 设置
 
+### 自定义用户名和密码
+
+编辑项目根目录（与 `docker-compose.yml` 同一目录）中的 `.env` 文件：
+
+```env
+CLAW_USER=myname
+CLAW_PASSWORD=mypassword
+```
+
+然后重新构建：
+```bash
+docker compose up -d --build
+```
+
+> 如果在之前运行后更改用户名，需要先删除旧的卷：
+> `docker compose down -v && docker compose up -d --build`
+
 ### 环境变量
 
-| 变量 | 默认值 | 说明 |
-|----------|---------|-------------|
-| `USER` | `claw` | Linux 用户名 |
-| `PASSWORD` | `claw1234` | VNC / RDP / sudo 密码 |
-| `VNC_RESOLUTION` | `1920x1080` | 桌面分辨率 |
-| `VNC_COL_DEPTH` | `24` | 色深 |
-| `TZ` | `Asia/Seoul` | 时区 |
+通过 `.env` 文件自动设置到 `docker-compose.yml`：
+
+| `.env` 变量 | 容器环境变量 | 默认值 | 说明 |
+|----------|---------|---------|-------------|
+| `CLAW_USER` | `USER` | `claw` | Linux 用户名 |
+| `CLAW_PASSWORD` | `PASSWORD` | `claw1234` | VNC / RDP / sudo 密码 |
+| — | `VNC_RESOLUTION` | `1920x1080` | 桌面分辨率 |
+| — | `VNC_COL_DEPTH` | `24` | 色深 |
+| — | `TZ` | `Asia/Seoul` | 时区 |
 
 ## 数据持久化
 
-`openclaw-home` 命名卷挂载到 `/home/claw`。以下内容会被保留：
+`openclaw-home` 命名卷挂载到配置用户的主目录（默认：`/home/claw`）。以下内容会被保留：
 
 - OpenClaw 配置、凭据和对话记录
 - Chrome 配置文件和书签
@@ -229,6 +248,7 @@ docker compose logs openclaw-desktop
 
 ### NoVNC 显示空白屏幕
 ```bash
+# 如果在 .env 中更改了 CLAW_USER，请将 'claw' 替换为相应的用户名
 docker exec -it openclaw-desktop bash
 su - claw -c "vncserver -kill :1"
 su - claw -c "vncserver :1 -geometry 1920x1080 -depth 24 -localhost no"
@@ -241,6 +261,7 @@ docker exec -it openclaw-desktop /etc/init.d/xrdp restart
 
 ### OpenClaw Gateway 未运行
 ```bash
+# 如果在 .env 中更改了 CLAW_USER，请将 'claw' 替换为相应的用户名
 docker exec -u claw openclaw-desktop openclaw status
 # 手动重启：
 docker exec -u claw openclaw-desktop bash -c \
@@ -257,6 +278,7 @@ docker exec -u claw openclaw-desktop bash -c \
 
 ```
 openclaw-docker/
+├── .env                    # 用户配置（CLAW_USER、CLAW_PASSWORD）
 ├── Dockerfile              # Ubuntu 24.04 基础镜像
 ├── docker-compose.yml      # Compose 配置
 ├── entrypoint.sh           # 运行时：VNC、xRDP、Chrome 配置、Gateway

@@ -68,7 +68,7 @@ docker compose up -d --build
 
 ### Web Browser (NoVNC)
 
-Open `http://localhost:6080/vnc.html` and enter the VNC password (`claw1234`).
+Open `http://localhost:6080/vnc.html` and enter the VNC password (default: `claw1234`, configurable in `.env`).
 
 ### RDP (Remote Desktop)
 
@@ -77,7 +77,7 @@ Connect to `localhost:3389` with any RDP client:
 - **macOS**: Microsoft Remote Desktop
 - **Linux**: Remmina
 
-Login: `claw` / `claw1234` (leave Domain blank).
+Login with your configured username and password (default: `claw` / `claw1234`, configurable in `.env`). Leave Domain blank.
 
 ### VNC Client
 
@@ -183,19 +183,38 @@ Pre-seeded at `~/.openclaw/openclaw.json`:
 - `controlUi.allowedOrigins: ["*"]` — allows Dashboard access from any origin (needed inside Docker)
 - No AI model is configured by default — set one via onboarding or CLI
 
+### Custom Username & Password
+
+Edit the `.env` file in the project root (same directory as `docker-compose.yml`):
+
+```env
+CLAW_USER=myname
+CLAW_PASSWORD=mypassword
+```
+
+Then rebuild:
+```bash
+docker compose up -d --build
+```
+
+> If changing the username after a previous run, delete the old volume first:
+> `docker compose down -v && docker compose up -d --build`
+
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `USER` | `claw` | Linux username |
-| `PASSWORD` | `claw1234` | VNC / RDP / sudo password |
-| `VNC_RESOLUTION` | `1920x1080` | Desktop resolution |
-| `VNC_COL_DEPTH` | `24` | Color depth |
-| `TZ` | `Asia/Seoul` | Timezone |
+These are set automatically from `.env` via `docker-compose.yml`:
+
+| `.env` Variable | Container Env | Default | Description |
+|----------|---------|---------|-------------|
+| `CLAW_USER` | `USER` | `claw` | Linux username |
+| `CLAW_PASSWORD` | `PASSWORD` | `claw1234` | VNC / RDP / sudo password |
+| — | `VNC_RESOLUTION` | `1920x1080` | Desktop resolution |
+| — | `VNC_COL_DEPTH` | `24` | Color depth |
+| — | `TZ` | `Asia/Seoul` | Timezone |
 
 ## Data Persistence
 
-The `openclaw-home` named volume mounts to `/home/claw`. This preserves:
+The `openclaw-home` named volume mounts to the configured user's home directory (`/home/claw` by default). This preserves:
 
 - OpenClaw config, credentials, and conversation history
 - Chrome profile and bookmarks
@@ -229,6 +248,7 @@ Check for errors in VNC startup or config validation.
 
 ### NoVNC shows blank screen
 ```bash
+# Replace 'claw' with your CLAW_USER if changed in .env
 docker exec -it openclaw-desktop bash
 su - claw -c "vncserver -kill :1"
 su - claw -c "vncserver :1 -geometry 1920x1080 -depth 24 -localhost no"
@@ -241,6 +261,7 @@ docker exec -it openclaw-desktop /etc/init.d/xrdp restart
 
 ### OpenClaw Gateway not running
 ```bash
+# Replace 'claw' with your CLAW_USER if changed in .env
 docker exec -u claw openclaw-desktop openclaw status
 # Manual restart:
 docker exec -u claw openclaw-desktop bash -c \
@@ -257,6 +278,7 @@ The browser opened with a Docker internal IP instead of `localhost`. Close it an
 
 ```
 openclaw-docker/
+├── .env                    # User configuration (CLAW_USER, CLAW_PASSWORD)
 ├── Dockerfile              # Ubuntu 24.04 base image
 ├── docker-compose.yml      # Compose configuration
 ├── entrypoint.sh           # Runtime: VNC, xRDP, Chrome config, Gateway

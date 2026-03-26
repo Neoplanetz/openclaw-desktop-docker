@@ -232,11 +232,13 @@ Once the virtual computer is running, connect to it using the **web browser you 
 
 2. Click the **"Connect"** button.
 
-3. If prompted for a password, enter:
+3. If prompted for a password, enter the default password:
 
    ```
    claw1234
    ```
+
+   > This is the default password. You can change it in the `.env` file.
 
 4. The virtual computer's desktop will appear! You can use it with your mouse and keyboard just like a regular computer.
 
@@ -470,8 +472,9 @@ On Ubuntu, Docker runs as a system service, so no separate app needs to stay ope
 
 ### Q: What is the password?
 
-- Password to access the virtual computer: `claw1234`
-- If asked for an administrator password inside the virtual computer: `claw1234`
+- Default password to access the virtual computer: `claw1234`
+- If asked for an administrator password inside the virtual computer: same password
+- You can change the username and password by editing the `.env` file in the project folder, then running `docker compose up -d --build`
 
 ### Q: I want to start the setup from scratch
 

@@ -236,6 +236,13 @@ RUN sed -i 's/^#xserverbpp=24/xserverbpp=24/' /etc/xrdp/xrdp.ini \
     && echo "xfce4-session" > /home/${USER}/.xsession \
     && chown ${USER}:${USER} /home/${USER}/.xsession
 
+# ── Save user config templates (for dynamic user creation at runtime) ──
+RUN mkdir -p /opt/openclaw-defaults \
+    && cp -a /home/${USER}/.vnc /opt/openclaw-defaults/ \
+    && cp -a /home/${USER}/.openclaw /opt/openclaw-defaults/ \
+    && cp -a /home/${USER}/Desktop /opt/openclaw-defaults/ \
+    && cp -a /home/${USER}/.xsession /opt/openclaw-defaults/
+
 # Replace startwm.sh with XFCE4 (xRDP session startup)
 RUN printf '#!/bin/bash\n\
 unset DBUS_SESSION_BUS_ADDRESS\n\

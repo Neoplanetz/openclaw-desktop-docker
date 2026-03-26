@@ -68,7 +68,7 @@ docker compose up -d --build
 
 ### 웹 브라우저 (NoVNC)
 
-`http://localhost:6080/vnc.html`을 열고 VNC 비밀번호(`claw1234`)를 입력하세요.
+`http://localhost:6080/vnc.html`을 열고 VNC 비밀번호를 입력하세요 (기본값: `claw1234`, `.env` 파일에서 변경 가능).
 
 ### RDP (원격 데스크톱)
 
@@ -77,7 +77,7 @@ docker compose up -d --build
 - **macOS**: Microsoft Remote Desktop
 - **Linux**: Remmina
 
-로그인 정보: `claw` / `claw1234` (도메인은 비워두세요).
+설정된 사용자명과 비밀번호로 로그인하세요 (기본값: `claw` / `claw1234`, `.env` 파일에서 변경 가능). 도메인은 비워두세요.
 
 ### VNC 클라이언트
 
@@ -183,19 +183,38 @@ openclaw dashboard           # 자동 로그인 토큰으로 대시보드 열기
 - `controlUi.allowedOrigins: ["*"]` — 모든 오리진에서 대시보드 접근 허용 (Docker 내부에서 필요)
 - 기본적으로 AI 모델은 설정되어 있지 않음 — 온보딩 또는 CLI로 설정하세요
 
+### 사용자명 & 비밀번호 변경
+
+프로젝트 루트(`docker-compose.yml`과 같은 디렉토리)에 있는 `.env` 파일을 수정하세요:
+
+```env
+CLAW_USER=myname
+CLAW_PASSWORD=mypassword
+```
+
+그 다음 재빌드합니다:
+```bash
+docker compose up -d --build
+```
+
+> 이전에 사용한 사용자명을 변경할 경우, 기존 볼륨을 먼저 삭제해야 합니다:
+> `docker compose down -v && docker compose up -d --build`
+
 ### 환경 변수
 
-| 변수 | 기본값 | 설명 |
-|----------|---------|-------------|
-| `USER` | `claw` | Linux 사용자명 |
-| `PASSWORD` | `claw1234` | VNC / RDP / sudo 비밀번호 |
-| `VNC_RESOLUTION` | `1920x1080` | 데스크톱 해상도 |
-| `VNC_COL_DEPTH` | `24` | 색 심도 |
-| `TZ` | `Asia/Seoul` | 시간대 |
+`.env` 파일을 통해 `docker-compose.yml`에서 자동으로 설정됩니다:
+
+| `.env` 변수 | 컨테이너 환경변수 | 기본값 | 설명 |
+|----------|---------|---------|-------------|
+| `CLAW_USER` | `USER` | `claw` | Linux 사용자명 |
+| `CLAW_PASSWORD` | `PASSWORD` | `claw1234` | VNC / RDP / sudo 비밀번호 |
+| — | `VNC_RESOLUTION` | `1920x1080` | 데스크톱 해상도 |
+| — | `VNC_COL_DEPTH` | `24` | 색 심도 |
+| — | `TZ` | `Asia/Seoul` | 시간대 |
 
 ## 데이터 영속성
 
-`openclaw-home` 네임드 볼륨이 `/home/claw`에 마운트됩니다. 다음이 보존됩니다:
+`openclaw-home` 네임드 볼륨이 설정된 사용자의 홈 디렉토리에 마운트됩니다 (기본값: `/home/claw`). 다음이 보존됩니다:
 
 - OpenClaw 설정, 인증 정보, 대화 기록
 - Chrome 프로필 및 북마크
@@ -229,6 +248,7 @@ VNC 시작 또는 설정 검증 오류를 확인하세요.
 
 ### NoVNC에 빈 화면이 표시됨
 ```bash
+# .env에서 CLAW_USER를 변경한 경우 'claw'를 해당 사용자명으로 바꾸세요
 docker exec -it openclaw-desktop bash
 su - claw -c "vncserver -kill :1"
 su - claw -c "vncserver :1 -geometry 1920x1080 -depth 24 -localhost no"
@@ -241,6 +261,7 @@ docker exec -it openclaw-desktop /etc/init.d/xrdp restart
 
 ### OpenClaw Gateway가 실행되지 않음
 ```bash
+# .env에서 CLAW_USER를 변경한 경우 'claw'를 해당 사용자명으로 바꾸세요
 docker exec -u claw openclaw-desktop openclaw status
 # 수동 재시작:
 docker exec -u claw openclaw-desktop bash -c \
@@ -257,6 +278,7 @@ docker exec -u claw openclaw-desktop bash -c \
 
 ```
 openclaw-docker/
+├── .env                    # 사용자 설정 (CLAW_USER, CLAW_PASSWORD)
 ├── Dockerfile              # Ubuntu 24.04 베이스 이미지
 ├── docker-compose.yml      # Compose 설정
 ├── entrypoint.sh           # 런타임: VNC, xRDP, Chrome 설정, Gateway
