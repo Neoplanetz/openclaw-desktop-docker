@@ -283,12 +283,19 @@ The browser opened with a Docker internal IP instead of `localhost`. Close it an
 ## File Structure
 
 ```
-openclaw-docker/
-├── .env                    # User configuration (CLAW_USER, CLAW_PASSWORD)
-├── Dockerfile              # Ubuntu 24.04 base image
-├── docker-compose.yml      # Compose configuration
-├── entrypoint.sh           # Runtime: VNC, xRDP, Chrome config, Gateway
-├── dockerized_openclaw.png # Desktop wallpaper & README preview
-├── .gitignore
-└── README.md
+openclaw-desktop-docker/
+├── .env                        # User configuration (CLAW_USER, CLAW_PASSWORD)
+├── Dockerfile                  # Ubuntu 24.04 base image
+├── docker-compose.yml          # Compose configuration
+├── entrypoint.sh               # Runtime: VNC, xRDP, Chrome config, Gateway
+├── README.md                   # Documentation (EN, KO, ZH, JA)
+├── assets/                     # Images & architecture diagrams
+│   ├── architecture_*.svg
+│   ├── dockerized_openclaw.png
+│   └── openclaw_desktop_web.png
+└── docs/                       # Guides & changelog
+    ├── CHANGELOG.md
+    ├── DOCKERHUB_OVERVIEW.md
+    ├── GUIDE_FOR_BEGINNERS.*.md
+    └── images/                 # Guide screenshots
 ```

@@ -283,12 +283,19 @@ docker exec -u claw openclaw-desktop bash -c \
 ## 파일 구조
 
 ```
-openclaw-docker/
-├── .env                    # 사용자 설정 (CLAW_USER, CLAW_PASSWORD)
-├── Dockerfile              # Ubuntu 24.04 베이스 이미지
-├── docker-compose.yml      # Compose 설정
-├── entrypoint.sh           # 런타임: VNC, xRDP, Chrome 설정, Gateway
-├── dockerized_openclaw.png # 데스크톱 배경화면 & README 미리보기
-├── .gitignore
-└── README.md
+openclaw-desktop-docker/
+├── .env                        # 사용자 설정 (CLAW_USER, CLAW_PASSWORD)
+├── Dockerfile                  # Ubuntu 24.04 베이스 이미지
+├── docker-compose.yml          # Compose 설정
+├── entrypoint.sh               # 런타임: VNC, xRDP, Chrome 설정, Gateway
+├── README.md                   # 문서 (EN, KO, ZH, JA)
+├── assets/                     # 이미지 & 아키텍처 다이어그램
+│   ├── architecture_*.svg
+│   ├── dockerized_openclaw.png
+│   └── openclaw_desktop_web.png
+└── docs/                       # 가이드 & 체인지로그
+    ├── CHANGELOG.md
+    ├── DOCKERHUB_OVERVIEW.md
+    ├── GUIDE_FOR_BEGINNERS.*.md
+    └── images/                 # 가이드 스크린샷
 ```
