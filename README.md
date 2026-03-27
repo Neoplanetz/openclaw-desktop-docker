@@ -9,11 +9,17 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/neoplanetz) [![CTEE](https://img.shields.io/badge/CTEE-커피%20한%20잔-FF5722?style=for-the-badge)](https://ctee.kr/place/neoplanetz)
 
 <p>
-  <img src="dockerized_openclaw.png" width="49%" />
-  <img src="openclaw_desktop_web.png" width="49%" />
+  <img src="assets/dockerized_openclaw.png" width="49%" />
+  <img src="assets/openclaw_desktop_web.png" width="49%" />
 </p>
 
-> **New to Docker?** Check out the [Beginner's Guide](GUIDE_FOR_BEGINNERS.en.md) for step-by-step instructions with screenshots.
+> **New to Docker?** Check out the [Beginner's Guide](docs/GUIDE_FOR_BEGINNERS.en.md) for step-by-step instructions with screenshots.
+
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture_en.svg" width="680" />
+</p>
 
 ## What's Included
 

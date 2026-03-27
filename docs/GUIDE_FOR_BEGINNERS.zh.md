@@ -254,63 +254,63 @@ OpenClaw 是一个**在自己电脑上运行 AI 助手的程序**。
 
 ### 5-1. 开始引导
 
-![01](guide_images/01-welcome.png)
+![01](images/01-welcome.png)
 
 选择 **Yes**。
 
 ### 5-2. 选择 QuickStart
 
-![02](guide_images/02-quickstart.png)
+![02](images/02-quickstart.png)
 
 选择 **QuickStart**。
 
 ### 5-3. 更新设置值
 
-![03](guide_images/03-update-values.png)
+![03](images/03-update-values.png)
 
 选择 **Update values**。
 
 ### 5-4. 选择 AI 提供商
 
-![04](guide_images/04-select-openai.png)
+![04](images/04-select-openai.png)
 
 选择 **OpenAI**。
 
 ### 5-5. 选择认证方式
 
-![05](guide_images/05-codex-oauth.png)
+![05](images/05-codex-oauth.png)
 
 选择 **OpenAI Codex (ChatGPT OAuth)**。如果您有 ChatGPT Plus/Pro 订阅，无需单独的 API 密钥即可直接使用。
 
 ### 5-6. Chrome 登录弹窗
 
-![06](guide_images/06-chrome-signin.png)
+![06](images/06-chrome-signin.png)
 
 Chrome 浏览器打开后可能会出现登录弹窗。点击 **OK**，然后选择 **Don't Sign in**。（这里需要登录的是 OpenAI，而不是 Chrome 账户）
 
 ### 5-7. 登录 OpenAI
 
-![07](guide_images/07-openai-login.png)
+![07](images/07-openai-login.png)
 
 出现 OpenAI 登录界面时，使用**您在 ChatGPT 中使用的账户**登录，然后点击 **Continue**。
 
 ### 5-8. 认证完成
 
-![08](guide_images/08-auth-complete.png)
+![08](images/08-auth-complete.png)
 
-![09](guide_images/09-auth-done.png)
+![09](images/09-auth-done.png)
 
 认证完成后会出现上图所示的界面。系统会自动进入下一步。
 
 ### 5-9. 选择默认模型
 
-![10](guide_images/10-select-model.png)
+![10](images/10-select-model.png)
 
 选择要使用的 AI 模型。如果不确定，**保持默认值**继续即可。
 
 ### 5-10. 连接频道（可选）
 
-![11](guide_images/11-select-channel.png)
+![11](images/11-select-channel.png)
 
 选择要连接的 Telegram、Discord 等通讯工具。**可以稍后再设置，跳过也没关系。**
 
@@ -318,7 +318,7 @@ Chrome 浏览器打开后可能会出现登录弹窗。点击 **OK**，然后选
 
 ### 5-11. 输入 Telegram Bot Token（选择 Telegram 时）
 
-![12](guide_images/12-telegram-token.png)
+![12](images/12-telegram-token.png)
 
 选择 **Enter Telegram bot Token**，然后输入您的 Telegram Bot Token。
 
@@ -326,53 +326,53 @@ Chrome 浏览器打开后可能会出现登录弹窗。点击 **OK**，然后选
 
 ### 5-12. 选择其他 AI 提供商（可选）
 
-![13](guide_images/13-additional-provider.png)
+![13](images/13-additional-provider.png)
 
 可以额外添加其他 AI 提供商。不需要的话跳过即可。
 
 ### 5-13. 输入其他 API 密钥（可选）
 
-![14](guide_images/14-additional-apikey.png)
+![14](images/14-additional-apikey.png)
 
 如果选择了其他提供商，请输入对应的 API 密钥。不需要的话**直接按 Enter** 跳过。
 
 ### 5-14. 安装技能
 
-![15](guide_images/15-skills-confirm.png)
+![15](images/15-skills-confirm.png)
 
 系统询问是否安装技能。选择 **Yes**。
 
-![16](guide_images/16-skills-select.png)
+![16](images/16-skills-select.png)
 
 用**键盘空格键**选择想要的技能，然后按 **Enter** 进行安装。
 
 ### 5-15. 配置技能
 
-![17](guide_images/17-skills-setup-confirm.png)
+![17](images/17-skills-setup-confirm.png)
 
 系统询问是否进行技能配置。选择 **Yes**。
 
-![18](guide_images/18-skills-apikeys.png)
+![18](images/18-skills-apikeys.png)
 
 输入各技能所需的 API 密钥，或者选择 **No** 跳过不需要的部分。
 
 ### 5-16. 安装 Hook
 
-![19](guide_images/19-hooks.png)
+![19](images/19-hooks.png)
 
 系统询问是否安装 Hook（自动化功能）。**建议全部选择安装。**
 
 ### 5-17. 安装 Gateway（可忽略）
 
-![20](guide_images/20-gateway-fail.png)
+![20](images/20-gateway-fail.png)
 
-![21](guide_images/21-dashboard-auto.png)
+![21](images/21-dashboard-auto.png)
 
 可能会出现"Gateway daemon install failed"的提示，但这是**正常现象，请忽略。** 稍等片刻，OpenClaw Dashboard 界面会自动打开。
 
 ### 5-18. 确认设置完成
 
-![22](guide_images/22-dashboard-chat.png)
+![22](images/22-dashboard-chat.png)
 
 在仪表盘的 Chat 界面中输入 **"Hi"** 试试。如果 AI 正常回复，则说明安装已完成！
 
@@ -384,19 +384,19 @@ Chrome 浏览器打开后可能会出现登录弹窗。点击 **OK**，然后选
 
 ### 6-1. 在 Telegram 中向 Bot 发消息
 
-![23](guide_images/23-telegram-start.png)
+![23](images/23-telegram-start.png)
 
-![24](guide_images/24-telegram-pairing.png)
+![24](images/24-telegram-pairing.png)
 
-![25](guide_images/25-telegram-code.png)
+![25](images/25-telegram-code.png)
 
 在 Telegram 中找到您的 Bot 并开始对话。Bot 会发送一个 **Pairing Code**（配对码）给您。
 
 ### 6-2. 批准 Pairing Code
 
-![26](guide_images/26-pairing-terminal.png)
+![26](images/26-pairing-terminal.png)
 
-![27](guide_images/27-pairing-approve.png)
+![27](images/27-pairing-approve.png)
 
 在虚拟电脑桌面上双击 **"OpenClaw Terminal"**，然后输入以下命令。将 `<pairing code>` 替换为您从 Telegram 收到的配对码。
 
@@ -406,7 +406,7 @@ openclaw pairing approve telegram <pairing code>
 
 ### 6-3. 通过 Telegram 开始对话
 
-![28](guide_images/28-telegram-chat.png)
+![28](images/28-telegram-chat.png)
 
 批准完成后，您就可以在 Telegram 中与自己的 AI Bot 对话了！
 

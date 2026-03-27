@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-03-27
+
+### Added
+- Architecture diagrams (SVG) for all 4 languages (EN, KO, ZH, JA) with new "Architecture" section in each README
+
+### Changed
+- Reorganized project file structure into `assets/`, `docs/`, and `docs/images/` directories
+  - Images and SVGs → `assets/`
+  - Beginner's guides and CHANGELOG → `docs/`
+  - Guide screenshots → `docs/images/` (previously `guide_images/`)
+- Updated all internal references (image paths, guide links) across READMEs and guide files
+
 ## [1.1.0] - 2026-03-26
 
 ### Added

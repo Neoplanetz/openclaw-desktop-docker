@@ -9,11 +9,17 @@
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/neoplanetz) [![CTEE](https://img.shields.io/badge/CTEE-커피%20한%20잔-FF5722?style=for-the-badge)](https://ctee.kr/place/neoplanetz)
 
 <p>
-  <img src="dockerized_openclaw.png" width="49%" />
-  <img src="openclaw_desktop_web.png" width="49%" />
+  <img src="assets/dockerized_openclaw.png" width="49%" />
+  <img src="assets/openclaw_desktop_web.png" width="49%" />
 </p>
 
-> **第一次使用 Docker？** 请查看[完全新手指南](GUIDE_FOR_BEGINNERS.zh.md)，包含截图的分步说明。
+> **第一次使用 Docker？** 请查看[完全新手指南](docs/GUIDE_FOR_BEGINNERS.zh.md)，包含截图的分步说明。
+
+## 架构
+
+<p align="center">
+  <img src="assets/architecture_zh.svg" width="680" />
+</p>
 
 ## 包含组件
 

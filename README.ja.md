@@ -9,11 +9,17 @@ Node.js 22、OpenClaw、Google Chrome、デフォルトのGateway設定がすべ
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/neoplanetz) [![CTEE](https://img.shields.io/badge/CTEE-커피%20한%20잔-FF5722?style=for-the-badge)](https://ctee.kr/place/neoplanetz)
 
 <p>
-  <img src="dockerized_openclaw.png" width="49%" />
-  <img src="openclaw_desktop_web.png" width="49%" />
+  <img src="assets/dockerized_openclaw.png" width="49%" />
+  <img src="assets/openclaw_desktop_web.png" width="49%" />
 </p>
 
-> **Dockerが初めてですか？** スクリーンショット付きの[完全初心者ガイド](GUIDE_FOR_BEGINNERS.ja.md)をご覧ください。
+> **Dockerが初めてですか？** スクリーンショット付きの[完全初心者ガイド](docs/GUIDE_FOR_BEGINNERS.ja.md)をご覧ください。
+
+## アーキテクチャ
+
+<p align="center">
+  <img src="assets/architecture_ja.svg" width="680" />
+</p>
 
 ## 含まれるコンポーネント
 

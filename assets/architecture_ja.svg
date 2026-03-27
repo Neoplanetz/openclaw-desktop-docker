@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="700" viewBox="0 0 680 700">
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<style>
+  text { font-family: -apple-system, "Segoe UI", "Helvetica Neue", "Noto Sans KR", "Noto Sans JP", "Noto Sans SC", Arial, sans-serif; }
+  .th { font-size: 14px; font-weight: 500; }
+  .ts { font-size: 12px; font-weight: 400; }
+  .c-gray > rect { fill: #F1EFE8; stroke: #5F5E5A; }
+  .c-gray > .th { fill: #2C2C2A; }
+  .c-gray > .ts { fill: #5F5E5A; }
+  .c-amber > rect { fill: #FAEEDA; stroke: #854F0B; }
+  .c-amber > .th { fill: #633806; }
+  .c-amber > .ts { fill: #854F0B; }
+  .c-blue > rect { fill: #E6F1FB; stroke: #185FA5; }
+  .c-blue > .th { fill: #0C447C; }
+  .c-blue > .ts { fill: #185FA5; }
+  .c-teal > rect { fill: #E1F5EE; stroke: #0F6E56; }
+  .c-teal > .th { fill: #085041; }
+  .c-teal > .ts { fill: #0F6E56; }
+  .c-purple > rect { fill: #EEEDFE; stroke: #534AB7; }
+  .c-purple > .th { fill: #3C3489; }
+  .c-purple > .ts { fill: #534AB7; }
+  .c-green > rect { fill: #EAF3DE; stroke: #3B6D11; }
+  .c-green > .th { fill: #27500A; }
+  .c-green > .ts { fill: #3B6D11; }
+  .c-pink > rect { fill: #FBEAF0; stroke: #993556; }
+  .c-pink > .th { fill: #72243E; }
+  .c-pink > .ts { fill: #993556; }
+</style>
+
+<!-- YOUR PC -->
+<g class="c-gray">
+  <rect x="20" y="20" width="640" height="155" rx="20" stroke-width="0.5"/>
+  <text class="th" x="340" y="48" text-anchor="middle" dominant-baseline="central">あなたのPC</text>
+  <text class="ts" x="340" y="68" text-anchor="middle" dominant-baseline="central">Windows / macOS / Linux — Dockerのインストールだけで OK</text>
+</g>
+
+<g class="c-amber">
+  <rect x="50" y="88" width="230" height="68" rx="12" stroke-width="0.5"/>
+  <text class="th" x="165" y="108" text-anchor="middle" dominant-baseline="central">openclaw-home</text>
+  <text class="ts" x="165" y="126" text-anchor="middle" dominant-baseline="central">隔離されたDockerボリューム</text>
+  <text class="ts" x="165" y="142" text-anchor="middle" dominant-baseline="central">OpenClawのデータのみ保存</text>
+</g>
+
+<g class="c-blue">
+  <rect x="310" y="88" width="120" height="68" rx="12" stroke-width="0.5"/>
+  <text class="th" x="370" y="116" text-anchor="middle" dominant-baseline="central">Docker</text>
+  <text class="ts" x="370" y="134" text-anchor="middle" dominant-baseline="central">エンジン</text>
+</g>
+
+<g class="c-teal">
+  <rect x="460" y="88" width="180" height="68" rx="12" stroke-width="0.5"/>
+  <text class="th" x="550" y="112" text-anchor="middle" dominant-baseline="central">ブラウザ / RDP</text>
+  <text class="ts" x="550" y="132" text-anchor="middle" dominant-baseline="central">デスクトップに接続</text>
+</g>
+
+<!-- 3 access methods -->
+<g class="c-teal">
+  <rect x="110" y="212" width="150" height="50" rx="12" stroke-width="0.5"/>
+  <text class="th" x="185" y="230" text-anchor="middle" dominant-baseline="central">Webブラウザ</text>
+  <text class="ts" x="185" y="248" text-anchor="middle" dominant-baseline="central">localhost:6080</text>
+</g>
+<g class="c-teal">
+  <rect x="275" y="212" width="150" height="50" rx="12" stroke-width="0.5"/>
+  <text class="th" x="350" y="230" text-anchor="middle" dominant-baseline="central">リモートデスクトップ</text>
+  <text class="ts" x="350" y="248" text-anchor="middle" dominant-baseline="central">localhost:3389</text>
+</g>
+<g class="c-teal">
+  <rect x="440" y="212" width="170" height="50" rx="12" stroke-width="0.5"/>
+  <text class="th" x="525" y="230" text-anchor="middle" dominant-baseline="central">VNCクライアント</text>
+  <text class="ts" x="525" y="248" text-anchor="middle" dominant-baseline="central">localhost:5901</text>
+</g>
+
+<!-- Fan-out: Browser/RDP → trunk → horizontal bar → 3 boxes -->
+<line x1="550" y1="156" x2="550" y2="185" stroke="#0F6E56" stroke-width="1.5"/>
+<line x1="185" y1="185" x2="550" y2="185" stroke="#0F6E56" stroke-width="1.5"/>
+<line x1="185" y1="185" x2="185" y2="210" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="350" y1="185" x2="350" y2="210" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="525" y1="185" x2="525" y2="210" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- Arrows: access → container -->
+<line x1="185" y1="262" x2="185" y2="308" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="350" y1="262" x2="350" y2="308" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="525" y1="262" x2="525" y2="308" stroke="#0F6E56" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- DOCKER CONTAINER -->
+<g class="c-purple">
+  <rect x="20" y="310" width="640" height="340" rx="20" stroke-width="0.5"/>
+  <text class="th" x="340" y="338" text-anchor="middle" dominant-baseline="central">Dockerコンテナ</text>
+  <text class="ts" x="340" y="356" text-anchor="middle" dominant-baseline="central">Docker内で動作する仮想Ubuntuデスクトップ</text>
+</g>
+
+<!-- Row 1: Desktop + OpenClaw -->
+<g class="c-green">
+  <rect x="50" y="374" width="290" height="50" rx="12" stroke-width="0.5"/>
+  <text class="th" x="195" y="392" text-anchor="middle" dominant-baseline="central">Ubuntuデスクトップ (XFCE)</text>
+  <text class="ts" x="195" y="410" text-anchor="middle" dominant-baseline="central">Chromeブラウザ搭載のフルGUI</text>
+</g>
+
+<g class="c-pink">
+  <rect x="360" y="374" width="280" height="50" rx="12" stroke-width="0.5"/>
+  <text class="th" x="500" y="392" text-anchor="middle" dominant-baseline="central">OpenClaw AIエージェント</text>
+  <text class="ts" x="500" y="410" text-anchor="middle" dominant-baseline="central">Gateway + Dashboard (:18789)</text>
+</g>
+
+<!-- Row 2: AI + Chat -->
+<text class="ts" x="500" y="442" text-anchor="middle" fill="#534AB7">インターネット</text>
+
+<g class="c-pink">
+  <rect x="360" y="454" width="135" height="50" rx="12" stroke-width="0.5"/>
+  <text class="th" x="427" y="472" text-anchor="middle" dominant-baseline="central">AIモデル</text>
+  <text class="ts" x="427" y="490" text-anchor="middle" dominant-baseline="central">OpenAIなど</text>
+</g>
+<g class="c-pink">
+  <rect x="510" y="454" width="135" height="50" rx="12" stroke-width="0.5"/>
+  <text class="th" x="577" y="472" text-anchor="middle" dominant-baseline="central">チャットアプリ</text>
+  <text class="ts" x="577" y="490" text-anchor="middle" dominant-baseline="central">Telegramなど</text>
+</g>
+
+<line x1="427" y1="424" x2="427" y2="452" stroke="#993556" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="577" y1="424" x2="577" y2="452" stroke="#993556" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<!-- Row 3: Saved data -->
+<g class="c-amber">
+  <rect x="50" y="528" width="590" height="50" rx="12" stroke-width="0.5"/>
+  <text class="th" x="345" y="546" text-anchor="middle" dominant-baseline="central">保存データ (/home/claw)</text>
+  <text class="ts" x="345" y="564" text-anchor="middle" dominant-baseline="central">設定 + APIキー + 会話履歴 + ワークスペース</text>
+</g>
+
+<!-- Volume mount: L-shaped bypass -->
+<path d="M50 122 L35 122 L35 553 L48 553" fill="none" stroke="#854F0B" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<text class="ts" x="42" y="510" text-anchor="start" fill="#854F0B">ボリュームマウント</text>
+
+</svg>

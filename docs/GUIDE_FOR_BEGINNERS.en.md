@@ -254,63 +254,63 @@ A terminal (black window) will open and the setup wizard will start. Follow the 
 
 ### 5-1. Start onboarding
 
-![01](guide_images/01-welcome.png)
+![01](images/01-welcome.png)
 
 Select **Yes**.
 
 ### 5-2. Select QuickStart
 
-![02](guide_images/02-quickstart.png)
+![02](images/02-quickstart.png)
 
 Select **QuickStart**.
 
 ### 5-3. Update values
 
-![03](guide_images/03-update-values.png)
+![03](images/03-update-values.png)
 
 Select **Update values**.
 
 ### 5-4. Select AI provider
 
-![04](guide_images/04-select-openai.png)
+![04](images/04-select-openai.png)
 
 Select **OpenAI**.
 
 ### 5-5. Select authentication method
 
-![05](guide_images/05-codex-oauth.png)
+![05](images/05-codex-oauth.png)
 
 Select **OpenAI Codex (ChatGPT OAuth)**. If you have a ChatGPT Plus/Pro subscription, you can use it right away without a separate API key.
 
 ### 5-6. Chrome sign-in popup
 
-![06](guide_images/06-chrome-signin.png)
+![06](images/06-chrome-signin.png)
 
 A Chrome browser window may open with a sign-in popup. Click **OK**, then select **Don't Sign in**. (You need to sign in with OpenAI, not a Chrome account.)
 
 ### 5-7. OpenAI login
 
-![07](guide_images/07-openai-login.png)
+![07](images/07-openai-login.png)
 
 When the OpenAI login screen appears, sign in with the **account you use for ChatGPT** and click **Continue**.
 
 ### 5-8. Authentication complete
 
-![08](guide_images/08-auth-complete.png)
+![08](images/08-auth-complete.png)
 
-![09](guide_images/09-auth-done.png)
+![09](images/09-auth-done.png)
 
 When authentication is complete, you will see a screen like the one above. It will automatically proceed to the next step.
 
 ### 5-9. Select default model
 
-![10](guide_images/10-select-model.png)
+![10](images/10-select-model.png)
 
 Choose the AI model you want to use. If you're not sure, just leave the **default selection** and continue.
 
 ### 5-10. Connect a channel (optional)
 
-![11](guide_images/11-select-channel.png)
+![11](images/11-select-channel.png)
 
 Choose a messaging app to connect, such as Telegram or Discord. **You can do this later, so feel free to skip it for now.**
 
@@ -318,7 +318,7 @@ Here, Telegram is used as an example.
 
 ### 5-11. Enter Telegram bot token (if Telegram is selected)
 
-![12](guide_images/12-telegram-token.png)
+![12](images/12-telegram-token.png)
 
 Select **Enter Telegram bot Token**, then enter your Telegram bot token.
 
@@ -326,53 +326,53 @@ Select **Enter Telegram bot Token**, then enter your Telegram bot token.
 
 ### 5-12. Select additional AI provider (optional)
 
-![13](guide_images/13-additional-provider.png)
+![13](images/13-additional-provider.png)
 
 You can optionally add another AI provider. Skip this if you don't need it.
 
 ### 5-13. Enter additional API key (optional)
 
-![14](guide_images/14-additional-apikey.png)
+![14](images/14-additional-apikey.png)
 
 If you selected an additional provider, enter its API key. If you don't need it, just press **Enter** to skip.
 
 ### 5-14. Install skills
 
-![15](guide_images/15-skills-confirm.png)
+![15](images/15-skills-confirm.png)
 
 You will be asked whether to install skills. Select **Yes**.
 
-![16](guide_images/16-skills-select.png)
+![16](images/16-skills-select.png)
 
 Use the **keyboard spacebar** to select the skills you want, then press **Enter** to install them.
 
 ### 5-15. Configure skills
 
-![17](guide_images/17-skills-setup-confirm.png)
+![17](images/17-skills-setup-confirm.png)
 
 You will be asked whether to proceed with skill configuration. Select **Yes**.
 
-![18](guide_images/18-skills-apikeys.png)
+![18](images/18-skills-apikeys.png)
 
 Enter the API key required for each skill, or select **No** if you don't need it.
 
 ### 5-16. Install hooks
 
-![19](guide_images/19-hooks.png)
+![19](images/19-hooks.png)
 
 You will be asked whether to install hooks (automation features). **It is recommended to select all and install them.**
 
 ### 5-17. Gateway installation (can be ignored)
 
-![20](guide_images/20-gateway-fail.png)
+![20](images/20-gateway-fail.png)
 
-![21](guide_images/21-dashboard-auto.png)
+![21](images/21-dashboard-auto.png)
 
 You may see a message saying "Gateway daemon install failed", but **this is normal. You can ignore it.** After a moment, the OpenClaw Dashboard will open automatically.
 
 ### 5-18. Confirm setup is complete
 
-![22](guide_images/22-dashboard-chat.png)
+![22](images/22-dashboard-chat.png)
 
 In the Chat section of the dashboard, try typing **"Hi"**. If the AI responds normally, the installation is complete!
 
@@ -384,19 +384,19 @@ If you set up a Telegram channel, you need to approve the connection with your b
 
 ### 6-1. Message your bot on Telegram
 
-![23](guide_images/23-telegram-start.png)
+![23](images/23-telegram-start.png)
 
-![24](guide_images/24-telegram-pairing.png)
+![24](images/24-telegram-pairing.png)
 
-![25](guide_images/25-telegram-code.png)
+![25](images/25-telegram-code.png)
 
 Find your bot on Telegram and start a conversation. The bot will send you a **Pairing Code**.
 
 ### 6-2. Approve the Pairing Code
 
-![26](guide_images/26-pairing-terminal.png)
+![26](images/26-pairing-terminal.png)
 
-![27](guide_images/27-pairing-approve.png)
+![27](images/27-pairing-approve.png)
 
 On the virtual computer's desktop, double-click **"OpenClaw Terminal"** and enter the command below. Replace `<pairing code>` with the code you received from Telegram.
 
@@ -406,7 +406,7 @@ openclaw pairing approve telegram <pairing code>
 
 ### 6-3. Start chatting on Telegram
 
-![28](guide_images/28-telegram-chat.png)
+![28](images/28-telegram-chat.png)
 
 Once approved, you can chat with your AI bot directly on Telegram!
 
