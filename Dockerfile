@@ -221,8 +221,8 @@ RUN chown -R ${USER}:${USER} /home/${USER}/Desktop
 
 # ── Desktop wallpaper ─────────────────────────────────
 # 1) Replace default XFCE background (system path, unaffected by volume mounts)
-COPY dockerized_openclaw.png /usr/share/backgrounds/xfce/xfce-teal.jpg
-COPY dockerized_openclaw.png /usr/share/backgrounds/dockerized_openclaw.png
+COPY assets/dockerized_openclaw.png /usr/share/backgrounds/xfce/xfce-teal.jpg
+COPY assets/dockerized_openclaw.png /usr/share/backgrounds/dockerized_openclaw.png
 
 # ── VNC directory + xstartup (password set at runtime) ─
 RUN mkdir -p /home/${USER}/.vnc \
