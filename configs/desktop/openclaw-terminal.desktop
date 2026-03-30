@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenClaw Terminal
+Comment=OpenClaw CLI terminal
+Exec=xfce4-terminal -e "bash -c 'openclaw; exec bash'"
+Icon=utilities-terminal
+Terminal=false
+Categories=Utility;

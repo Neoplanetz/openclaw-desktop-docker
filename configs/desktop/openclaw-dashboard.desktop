@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenClaw Dashboard
+Comment=OpenClaw Dashboard (web browser)
+Exec=openclaw dashboard
+Icon=web-browser
+Terminal=false
+Categories=Network;

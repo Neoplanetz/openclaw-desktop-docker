@@ -24,6 +24,7 @@ services:
       - VNC_COL_DEPTH=24
       - TZ=Asia/Seoul
       - OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1
+      - OPENCLAW_BROWSER_ENABLED=${OPENCLAW_BROWSER_ENABLED:-false}
 
     # ── Port mapping ──
     ports:

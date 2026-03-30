@@ -1,0 +1,34 @@
+{
+  // OpenClaw Docker default config
+  // Set your AI model via Dashboard (http://localhost:18789/)
+  gateway: {
+    mode: "local",
+    port: 18789,
+    bind: "lan",
+    controlUi: {
+      allowedOrigins: ["*"],
+    },
+  },
+  browser: {
+    enabled: false,
+    defaultProfile: "openclaw",
+    noSandbox: true,
+  },
+  plugins: {
+    entries: {
+      browser: {
+        enabled: true,
+      },
+    },
+  },
+  agents: {
+    defaults: {
+      workspace: "~/.openclaw/workspace",
+    },
+  },
+  env: {
+    vars: {
+      TZ: "Asia/Seoul",
+    },
+  },
+}

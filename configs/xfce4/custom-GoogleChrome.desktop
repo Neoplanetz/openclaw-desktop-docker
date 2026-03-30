@@ -1,0 +1,11 @@
+[Desktop Entry]
+NoDisplay=true
+Version=1.0
+Encoding=UTF-8
+Type=X-XFCE-Helper
+X-XFCE-Binaries=google-chrome-stable
+X-XFCE-Category=WebBrowser
+X-XFCE-Commands=/usr/bin/google-chrome-stable
+X-XFCE-CommandsWithParameter=/usr/bin/google-chrome-stable "%s"
+Name=Google Chrome
+Icon=google-chrome

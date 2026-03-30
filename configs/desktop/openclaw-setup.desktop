@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenClaw Setup
+Comment=OpenClaw onboarding (AI model, channels, skills)
+Exec=xfce4-terminal -e "openclaw-setup.sh"
+Icon=preferences-system
+Terminal=false
+Categories=Utility;

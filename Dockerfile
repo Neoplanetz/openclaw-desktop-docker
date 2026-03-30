@@ -124,13 +124,9 @@ ARG OPENCLAW_VERSION=latest
 RUN npm install -g openclaw@${OPENCLAW_VERSION} \
     && echo "OpenClaw $(openclaw --version 2>/dev/null || echo 'installed')"
 
-# ── vncpasswd binary check/symlink ────────────────────────
-# Binary name/path may differ across packages
-RUN echo "=== VNC binary lookup ===" \
-    && find / -name "*vncpasswd*" -type f 2>/dev/null || true \
-    && (which vncpasswd && echo "vncpasswd OK") \
-    || (which tigervncpasswd && ln -sf $(which tigervncpasswd) /usr/local/bin/vncpasswd && echo "tigervncpasswd → symlinked") \
-    || echo "WARN: vncpasswd not found, will use Python fallback at runtime"
+# ── Verify vncpasswd is available ────────────────────────
+RUN which vncpasswd || (which tigervncpasswd && ln -sf $(which tigervncpasswd) /usr/local/bin/vncpasswd) \
+    || (echo "ERROR: vncpasswd not found" && exit 1)
 
 # ── Create user ───────────────────────────────────────────
 RUN useradd -m -s /bin/bash ${USER} \
@@ -139,86 +135,20 @@ RUN useradd -m -s /bin/bash ${USER} \
     && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/${USER}
 
 # ── OpenClaw default config (model excluded — set via Dashboard) ───
-RUN mkdir -p /home/${USER}/.openclaw/workspace \
-    && cat > /home/${USER}/.openclaw/openclaw.json << 'CLAWCFG'
-{
-  // OpenClaw Docker default config
-  // Set your AI model via Dashboard (http://localhost:18789/)
-  gateway: {
-    mode: "local",
-    port: 18789,
-    bind: "lan",
-    controlUi: {
-      allowedOrigins: ["*"],
-    },
-  },
-  agents: {
-    defaults: {
-      workspace: "~/.openclaw/workspace",
-    },
-  },
-  env: {
-    vars: {
-      TZ: "Asia/Seoul",
-    },
-  },
-}
-CLAWCFG
-
+RUN mkdir -p /home/${USER}/.openclaw/workspace
+COPY configs/openclaw.json /home/${USER}/.openclaw/openclaw.json
 RUN chown -R ${USER}:${USER} /home/${USER}/.openclaw \
     && chmod 700 /home/${USER}/.openclaw \
     && chmod 600 /home/${USER}/.openclaw/openclaw.json
 
 # ── Desktop shortcuts ──────────────────────────────────
+COPY configs/openclaw-setup.sh /usr/local/bin/openclaw-setup.sh
+RUN chmod +x /usr/local/bin/openclaw-setup.sh
+
 RUN mkdir -p /home/${USER}/Desktop
-
-# 1) OpenClaw Setup script + desktop shortcut
-RUN printf '#!/bin/bash\n\
-echo "========================================"\n\
-echo " OpenClaw Setup (Onboarding)"\n\
-echo "========================================"\n\
-echo ""\n\
-openclaw onboard\n\
-echo ""\n\
-read\n' > /usr/local/bin/openclaw-setup.sh \
-    && chmod +x /usr/local/bin/openclaw-setup.sh
-
-RUN printf '[Desktop Entry]\n\
-Version=1.0\n\
-Type=Application\n\
-Name=OpenClaw Setup\n\
-Comment=OpenClaw onboarding (AI model, channels, skills)\n\
-Exec=xfce4-terminal -e "openclaw-setup.sh"\n\
-Icon=preferences-system\n\
-Terminal=false\n\
-Categories=Utility;\n' > /home/${USER}/Desktop/openclaw-setup.desktop \
-    && chmod +x /home/${USER}/Desktop/openclaw-setup.desktop
-
-# 2) OpenClaw Dashboard
-RUN printf '[Desktop Entry]\n\
-Version=1.0\n\
-Type=Application\n\
-Name=OpenClaw Dashboard\n\
-Comment=OpenClaw Dashboard (web browser)\n\
-Exec=openclaw dashboard\n\
-Icon=web-browser\n\
-Terminal=false\n\
-Categories=Network;\n' > /home/${USER}/Desktop/openclaw-dashboard.desktop \
-    && chmod +x /home/${USER}/Desktop/openclaw-dashboard.desktop
-
-# 3) OpenClaw Terminal (CLI)
-RUN printf '[Desktop Entry]\n\
-Version=1.0\n\
-Type=Application\n\
-Name=OpenClaw Terminal\n\
-Comment=OpenClaw CLI terminal\n\
-Exec=xfce4-terminal -e "bash -c '\''openclaw; exec bash'\''"\n\
-Icon=utilities-terminal\n\
-Terminal=false\n\
-Categories=Utility;\n' > /home/${USER}/Desktop/openclaw-terminal.desktop \
-    && chmod +x /home/${USER}/Desktop/openclaw-terminal.desktop
-
-RUN chown -R ${USER}:${USER} /home/${USER}/Desktop
+COPY configs/desktop/*.desktop /home/${USER}/Desktop/
+RUN chmod +x /home/${USER}/Desktop/*.desktop \
+    && chown -R ${USER}:${USER} /home/${USER}/Desktop
 
 # ── Desktop wallpaper ─────────────────────────────────
 # 1) Replace default XFCE background (system path, unaffected by volume mounts)
@@ -226,10 +156,9 @@ COPY assets/dockerized_openclaw.png /usr/share/backgrounds/xfce/xfce-teal.jpg
 COPY assets/dockerized_openclaw.png /usr/share/backgrounds/dockerized_openclaw.png
 
 # ── VNC directory + xstartup (password set at runtime) ─
-RUN mkdir -p /home/${USER}/.vnc \
-    && printf '#!/bin/bash\nunset SESSION_MANAGER\nunset DBUS_SESSION_BUS_ADDRESS\nexec dbus-launch --exit-with-session startxfce4\n' \
-       > /home/${USER}/.vnc/xstartup \
-    && chmod +x /home/${USER}/.vnc/xstartup \
+RUN mkdir -p /home/${USER}/.vnc
+COPY configs/vnc/xstartup /home/${USER}/.vnc/xstartup
+RUN chmod +x /home/${USER}/.vnc/xstartup \
     && chown -R ${USER}:${USER} /home/${USER}/.vnc
 
 # ── xRDP config ─────────────────────────────────────────────
@@ -238,21 +167,18 @@ RUN sed -i 's/^#xserverbpp=24/xserverbpp=24/' /etc/xrdp/xrdp.ini \
     && chown ${USER}:${USER} /home/${USER}/.xsession
 
 # ── Save user config templates (for dynamic user creation at runtime) ──
+# /opt/openclaw-defaults/  — user home template (copied to new users)
+# /opt/openclaw-configs/   — read-only config templates (entrypoint regeneration)
 RUN mkdir -p /opt/openclaw-defaults \
     && cp -a /home/${USER}/.vnc /opt/openclaw-defaults/ \
     && cp -a /home/${USER}/.openclaw /opt/openclaw-defaults/ \
     && cp -a /home/${USER}/Desktop /opt/openclaw-defaults/ \
     && cp -a /home/${USER}/.xsession /opt/openclaw-defaults/
+COPY configs/ /opt/openclaw-configs/
 
 # Replace startwm.sh with XFCE4 (xRDP session startup)
-RUN printf '#!/bin/bash\n\
-unset DBUS_SESSION_BUS_ADDRESS\n\
-unset XDG_RUNTIME_DIR\n\
-if [ -r /etc/profile ]; then\n\
-    . /etc/profile\n\
-fi\n\
-exec dbus-launch --exit-with-session startxfce4\n' > /etc/xrdp/startwm.sh \
-    && chmod +x /etc/xrdp/startwm.sh
+COPY configs/xrdp/startwm.sh /etc/xrdp/startwm.sh
+RUN chmod +x /etc/xrdp/startwm.sh
 
 # ── NoVNC symlink (unified path) ─────────────────────────
 RUN ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html 2>/dev/null || true

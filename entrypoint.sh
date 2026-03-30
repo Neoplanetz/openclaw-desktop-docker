@@ -7,6 +7,7 @@ VNC_PORT="${VNC_PORT:-5901}"
 NOVNC_PORT="${NOVNC_PORT:-6080}"
 VNC_RESOLUTION="${VNC_RESOLUTION:-1920x1080}"
 VNC_COL_DEPTH="${VNC_COL_DEPTH:-24}"
+OPENCLAW_BROWSER_ENABLED="${OPENCLAW_BROWSER_ENABLED:-false}"
 
 # ── Dynamic user creation ────────────────────────────────
 # Creates the Linux user at runtime so that USER/PASSWORD
@@ -42,149 +43,7 @@ echo "============================================"
 echo ">> Setting VNC password..."
 PASSWD_FILE="/home/${USER}/.vnc/passwd"
 mkdir -p "/home/${USER}/.vnc"
-
-VNC_PASSWD_OK=false
-
-# Method 1: vncpasswd binary (most reliable)
-for cmd in vncpasswd tigervncpasswd /usr/bin/vncpasswd /usr/bin/tigervncpasswd; do
-    if [ -x "$(command -v $cmd 2>/dev/null || echo $cmd)" ] 2>/dev/null; then
-        echo "   Method 1: using $cmd"
-        echo "${PASSWORD}" | "$cmd" -f > "${PASSWD_FILE}" 2>/dev/null && VNC_PASSWD_OK=true && break
-    fi
-done
-
-# Method 2: openssl + legacy provider (DES-ECB on OpenSSL 3.x)
-if [ "$VNC_PASSWD_OK" = false ]; then
-    echo "   Method 2: trying openssl (legacy provider)..."
-    python3 << 'PYEOF' && VNC_PASSWD_OK=true
-import subprocess, os, pwd
-
-password = os.environ.get('PASSWORD', 'claw1234')[:8].ljust(8, '\x00')
-key_bytes = bytes([int('{:08b}'.format(ord(c))[::-1], 2) for c in password])
-key_hex = key_bytes.hex()
-
-result = subprocess.run(
-    ['openssl', 'enc', '-des-ecb', '-nopad', '-nosalt', '-K', key_hex,
-     '-provider', 'legacy', '-provider', 'default'],
-    input=b'\x00' * 8, capture_output=True
-)
-if result.returncode != 0:
-    raise SystemExit(1)
-
-user = os.environ.get('USER', 'claw')
-pf = f'/home/{user}/.vnc/passwd'
-with open(pf, 'wb') as f:
-    f.write(result.stdout[:8])
-os.chmod(pf, 0o600)
-u = pwd.getpwnam(user)
-os.chown(pf, u.pw_uid, u.pw_gid)
-print('   openssl legacy -> OK')
-PYEOF
-fi
-
-# Method 3: pure Python DES (no external deps)
-if [ "$VNC_PASSWD_OK" = false ]; then
-    echo "   Method 3: pure Python DES..."
-    python3 << 'PYEOF'
-import os, pwd, struct
-
-# ── Minimal DES implementation for VNC password ──
-# Initial/Final permutation tables, S-boxes, etc.
-IP = [58,50,42,34,26,18,10,2,60,52,44,36,28,20,12,4,
-      62,54,46,38,30,22,14,6,64,56,48,40,32,24,16,8,
-      57,49,41,33,25,17,9,1,59,51,43,35,27,19,11,3,
-      61,53,45,37,29,21,13,5,63,55,47,39,31,23,15,7]
-FP = [40,8,48,16,56,24,64,32,39,7,47,15,55,23,63,31,
-      38,6,46,14,54,22,62,30,37,5,45,13,53,21,61,29,
-      36,4,44,12,52,20,60,28,35,3,43,11,51,19,59,27,
-      34,2,42,10,50,18,58,26,33,1,41,9,49,17,57,25]
-E = [32,1,2,3,4,5,4,5,6,7,8,9,8,9,10,11,12,13,12,13,14,15,16,17,
-     16,17,18,19,20,21,20,21,22,23,24,25,24,25,26,27,28,29,28,29,30,31,32,1]
-P = [16,7,20,21,29,12,28,17,1,15,23,26,5,18,31,10,
-     2,8,24,14,32,27,3,9,19,13,30,6,22,11,4,25]
-S = [
- [[14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7],[0,15,7,4,14,2,13,1,10,6,12,11,9,5,3,8],[4,1,14,8,13,6,2,11,15,12,9,7,3,10,5,0],[15,12,8,2,4,9,1,7,5,11,3,14,10,0,6,13]],
- [[15,1,8,14,6,11,3,4,9,7,2,13,12,0,5,10],[3,13,4,7,15,2,8,14,12,0,1,10,6,9,11,5],[0,14,7,11,10,4,13,1,5,8,12,6,9,3,2,15],[13,8,10,1,3,15,4,2,11,6,7,12,0,5,14,9]],
- [[10,0,9,14,6,3,15,5,1,13,12,7,11,4,2,8],[13,7,0,9,3,4,6,10,2,8,5,14,12,11,15,1],[13,6,4,9,8,15,3,0,11,1,2,12,5,10,14,7],[1,10,13,0,6,9,8,7,4,15,14,3,11,5,2,12]],
- [[7,13,14,3,0,6,9,10,1,2,8,5,11,12,4,15],[13,8,11,5,6,15,0,3,4,7,2,12,1,10,14,9],[10,6,9,0,12,11,7,13,15,1,3,14,5,2,8,4],[3,15,0,6,10,1,13,8,9,4,5,11,12,7,2,14]],
- [[2,12,4,1,7,10,11,6,8,5,3,15,13,0,14,9],[14,11,2,12,4,7,13,1,5,0,15,10,3,9,8,6],[4,2,1,11,10,13,7,8,15,9,12,5,6,3,0,14],[11,8,12,7,1,14,2,13,6,15,0,9,10,4,5,3]],
- [[12,1,10,15,9,2,6,8,0,13,3,4,14,7,5,11],[10,15,4,2,7,12,9,5,6,1,13,14,0,11,3,8],[9,14,15,5,2,8,12,3,7,0,4,10,1,13,11,6],[4,3,2,12,9,5,15,10,11,14,1,7,6,0,8,13]],
- [[4,11,2,14,15,0,8,13,3,12,9,7,5,10,6,1],[13,0,11,7,4,9,1,10,14,3,5,12,2,15,8,6],[1,4,11,13,12,3,7,14,10,15,6,8,0,5,9,2],[6,11,13,8,1,4,10,7,9,5,0,15,14,2,3,12]],
- [[13,2,8,4,6,15,11,1,10,9,3,14,5,0,12,7],[1,15,13,8,10,3,7,4,12,5,6,2,0,14,9,11],[7,11,4,1,9,12,14,2,0,6,10,13,15,3,5,8],[2,1,14,7,4,10,8,13,15,12,9,0,3,5,6,11]]
-]
-PC1 = [57,49,41,33,25,17,9,1,58,50,42,34,26,18,10,2,59,51,43,35,27,19,11,3,60,52,44,36,
-       63,55,47,39,31,23,15,7,62,54,46,38,30,22,14,6,61,53,45,37,29,21,13,5,28,20,12,4]
-PC2 = [14,17,11,24,1,5,3,28,15,6,21,10,23,19,12,4,26,8,16,7,27,20,13,2,41,52,31,37,47,55,30,40,51,45,33,48,44,49,39,56,34,53,46,42,50,36,29,32]
-SHIFTS = [1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1]
-
-def bits(v, n):
-    return [(v >> (n-1-i)) & 1 for i in range(n)]
-
-def frombits(b):
-    v = 0
-    for bit in b:
-        v = (v << 1) | bit
-    return v
-
-def permute(block, table):
-    return [block[t-1] for t in table]
-
-def des_encrypt_block(block_bytes, key_bytes):
-    block_bits = []
-    for b in block_bytes:
-        block_bits += bits(b, 8)
-    key_bits = []
-    for b in key_bytes:
-        key_bits += bits(b, 8)
-
-    key56 = permute(key_bits, PC1)
-    C, D = key56[:28], key56[28:]
-    subkeys = []
-    for s in SHIFTS:
-        C = C[s:] + C[:s]
-        D = D[s:] + D[:s]
-        subkeys.append(permute(C + D, PC2))
-
-    block_bits = permute(block_bits, IP)
-    L, R = block_bits[:32], block_bits[32:]
-
-    for i in range(16):
-        eR = permute(R, E)
-        x = [eR[j] ^ subkeys[i][j] for j in range(48)]
-        sout = []
-        for si in range(8):
-            chunk = x[si*6:(si+1)*6]
-            row = (chunk[0] << 1) | chunk[5]
-            col = (chunk[1] << 3) | (chunk[2] << 2) | (chunk[3] << 1) | chunk[4]
-            sout += bits(S[si][row][col], 4)
-        f = permute(sout, P)
-        newR = [L[j] ^ f[j] for j in range(32)]
-        L, R = R, newR
-
-    result_bits = permute(R + L, FP)
-    result = bytes([frombits(result_bits[i*8:(i+1)*8]) for i in range(8)])
-    return result
-
-password = os.environ.get('PASSWORD', 'claw1234')[:8].ljust(8, '\x00')
-key = bytes([int('{:08b}'.format(ord(c))[::-1], 2) for c in password])
-encrypted = des_encrypt_block(b'\x00' * 8, key)
-
-user = os.environ.get('USER', 'claw')
-pf = f'/home/{user}/.vnc/passwd'
-with open(pf, 'wb') as f:
-    f.write(encrypted)
-os.chmod(pf, 0o600)
-u = pwd.getpwnam(user)
-os.chown(pf, u.pw_uid, u.pw_gid)
-print('   pure Python DES -> OK')
-PYEOF
-    VNC_PASSWD_OK=true
-fi
-
-if [ "$VNC_PASSWD_OK" = false ]; then
-    echo "ERROR: VNC password generation failed"
-    exit 1
-fi
+echo "${PASSWORD}" | vncpasswd -f > "${PASSWD_FILE}"
 chmod 600 "${PASSWD_FILE}"
 chown "${USER}:${USER}" "${PASSWD_FILE}"
 
@@ -248,12 +107,7 @@ WALLEOF
 chown -R ${USER}:${USER} "/home/${USER}/.config/xfce4"
 
 # ── Regenerate xstartup (overwrite cached version from volume) ─────
-cat > /home/${USER}/.vnc/xstartup << 'XSTARTUP'
-#!/bin/bash
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-exec dbus-launch --exit-with-session startxfce4
-XSTARTUP
+cp /opt/openclaw-configs/vnc/xstartup /home/${USER}/.vnc/xstartup
 chmod +x /home/${USER}/.vnc/xstartup
 chown ${USER}:${USER} /home/${USER}/.vnc/xstartup
 
@@ -283,15 +137,7 @@ sleep 1
 echo ">> Starting xRDP server (port 3389)..."
 
 # Regenerate startwm.sh (XFCE4 session)
-cat > /etc/xrdp/startwm.sh << 'STARTWM'
-#!/bin/bash
-unset DBUS_SESSION_BUS_ADDRESS
-unset XDG_RUNTIME_DIR
-if [ -r /etc/profile ]; then
-    . /etc/profile
-fi
-exec dbus-launch --exit-with-session startxfce4
-STARTWM
+cp /opt/openclaw-configs/xrdp/startwm.sh /etc/xrdp/startwm.sh
 chmod +x /etc/xrdp/startwm.sh
 
 if [ ! -f /etc/xrdp/rsakeys.ini ]; then
@@ -324,31 +170,12 @@ fi
 
 # 2) XFCE custom helper (wrapper handles --no-sandbox)
 mkdir -p /home/${USER}/.local/share/xfce4/helpers
-cat > /home/${USER}/.local/share/xfce4/helpers/custom-GoogleChrome.desktop << 'EOF'
-[Desktop Entry]
-NoDisplay=true
-Version=1.0
-Encoding=UTF-8
-Type=X-XFCE-Helper
-X-XFCE-Binaries=google-chrome-stable
-X-XFCE-Category=WebBrowser
-X-XFCE-Commands=/usr/bin/google-chrome-stable
-X-XFCE-CommandsWithParameter=/usr/bin/google-chrome-stable "%s"
-Name=Google Chrome
-Icon=google-chrome
-EOF
+cp /opt/openclaw-configs/xfce4/custom-GoogleChrome.desktop \
+    /home/${USER}/.local/share/xfce4/helpers/custom-GoogleChrome.desktop
 
 # 3) XDG mime + mimeapps.list
 mkdir -p /home/${USER}/.config
-cat > /home/${USER}/.config/mimeapps.list << 'EOF'
-[Default Applications]
-text/html=google-chrome.desktop
-x-scheme-handler/http=google-chrome.desktop
-x-scheme-handler/https=google-chrome.desktop
-x-scheme-handler/about=google-chrome.desktop
-x-scheme-handler/unknown=google-chrome.desktop
-application/xhtml+xml=google-chrome.desktop
-EOF
+cp /opt/openclaw-configs/xfce4/mimeapps.list /home/${USER}/.config/mimeapps.list
 
 # 4) Clean Chrome crash/lock files (prevent stale state)
 rm -f /home/${USER}/.config/google-chrome/SingletonLock 2>/dev/null || true
@@ -366,47 +193,11 @@ mkdir -p "${DESKTOP_DIR}"
 # Clean up old icon names
 rm -f "${DESKTOP_DIR}/openclaw-model-setup.desktop" 2>/dev/null || true
 
-if [ ! -f "${DESKTOP_DIR}/openclaw-setup.desktop" ]; then
-    cat > "${DESKTOP_DIR}/openclaw-setup.desktop" << 'DESKEOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=OpenClaw Setup
-Comment=OpenClaw onboarding (AI model, channels, skills)
-Exec=xfce4-terminal -e "openclaw-setup.sh"
-Icon=preferences-system
-Terminal=false
-Categories=Utility;
-DESKEOF
-fi
-
-if [ ! -f "${DESKTOP_DIR}/openclaw-dashboard.desktop" ]; then
-    cat > "${DESKTOP_DIR}/openclaw-dashboard.desktop" << 'DESKEOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=OpenClaw Dashboard
-Comment=OpenClaw Dashboard (web browser)
-Exec=openclaw dashboard
-Icon=web-browser
-Terminal=false
-Categories=Network;
-DESKEOF
-fi
-
-if [ ! -f "${DESKTOP_DIR}/openclaw-terminal.desktop" ]; then
-    cat > "${DESKTOP_DIR}/openclaw-terminal.desktop" << 'DESKEOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=OpenClaw Terminal
-Comment=OpenClaw CLI terminal
-Exec=xfce4-terminal -e "bash -c 'openclaw; exec bash'"
-Icon=utilities-terminal
-Terminal=false
-Categories=Utility;
-DESKEOF
-fi
+for shortcut in openclaw-setup.desktop openclaw-dashboard.desktop openclaw-terminal.desktop; do
+    if [ ! -f "${DESKTOP_DIR}/${shortcut}" ]; then
+        cp /opt/openclaw-configs/desktop/${shortcut} "${DESKTOP_DIR}/${shortcut}"
+    fi
+done
 
 # Icon permissions + XFCE trust settings
 for f in "${DESKTOP_DIR}"/*.desktop; do
@@ -428,32 +219,9 @@ if command -v openclaw &>/dev/null; then
     OPENCLAW_DIR="/home/${USER}/.openclaw"
     OPENCLAW_CFG="${OPENCLAW_DIR}/openclaw.json"
     if [ ! -f "${OPENCLAW_CFG}" ]; then
-        echo ">> Generating default config..."
+        echo ">> Restoring default config..."
         mkdir -p "${OPENCLAW_DIR}/workspace"
-        cat > "${OPENCLAW_CFG}" << 'CLAWCFG'
-{
-  // OpenClaw Docker default config
-  // Set your AI model via Dashboard (http://localhost:18789/)
-  gateway: {
-    mode: "local",
-    port: 18789,
-    bind: "lan",
-    controlUi: {
-      allowedOrigins: ["*"],
-    },
-  },
-  agents: {
-    defaults: {
-      workspace: "~/.openclaw/workspace",
-    },
-  },
-  env: {
-    vars: {
-      TZ: "Asia/Seoul",
-    },
-  },
-}
-CLAWCFG
+        cp /opt/openclaw-configs/openclaw.json "${OPENCLAW_CFG}"
         chown -R ${USER}:${USER} "${OPENCLAW_DIR}"
         chmod 700 "${OPENCLAW_DIR}"
         chmod 600 "${OPENCLAW_CFG}"
@@ -469,6 +237,38 @@ CLAWCFG
     if ! grep -q "^OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=" "${OPENCLAW_ENV}" 2>/dev/null; then
         echo "OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1" >> "${OPENCLAW_ENV}"
     fi
+
+    # ── Auto-detect X11 DISPLAY and XAUTHORITY ─────────────────
+    # Always register these so browser features work without manual setup.
+    # OpenClaw gateway reads ~/.openclaw/.env to find the X11 display
+    # when launching Chrome via CDP (browser profile "openclaw").
+    DETECTED_DISPLAY="${DISPLAY:-:1}"
+    if [ ! -S "/tmp/.X11-unix/X${DETECTED_DISPLAY#:}" ]; then
+        # Configured DISPLAY socket not found — scan for any active one
+        for sock in /tmp/.X11-unix/X*; do
+            if [ -S "$sock" ]; then
+                DETECTED_DISPLAY=":$(basename "$sock" | sed 's/^X//')"
+                break
+            fi
+        done
+    fi
+    DETECTED_XAUTHORITY="/home/${USER}/.Xauthority"
+
+    # Update or add DISPLAY
+    if grep -q "^DISPLAY=" "${OPENCLAW_ENV}" 2>/dev/null; then
+        sed -i "s|^DISPLAY=.*|DISPLAY=${DETECTED_DISPLAY}|" "${OPENCLAW_ENV}"
+    else
+        echo "DISPLAY=${DETECTED_DISPLAY}" >> "${OPENCLAW_ENV}"
+    fi
+    # Update or add XAUTHORITY
+    if grep -q "^XAUTHORITY=" "${OPENCLAW_ENV}" 2>/dev/null; then
+        sed -i "s|^XAUTHORITY=.*|XAUTHORITY=${DETECTED_XAUTHORITY}|" "${OPENCLAW_ENV}"
+    else
+        echo "XAUTHORITY=${DETECTED_XAUTHORITY}" >> "${OPENCLAW_ENV}"
+    fi
+    echo "   DISPLAY=${DETECTED_DISPLAY}"
+    echo "   XAUTHORITY=${DETECTED_XAUTHORITY}"
+
     chown ${USER}:${USER} "${OPENCLAW_ENV}"
     chmod 600 "${OPENCLAW_ENV}"
 
@@ -484,6 +284,17 @@ CLAWCFG
         echo "Dashboard: http://localhost:18789/"
         echo ""
         echo "  Set AI model via Dashboard if not configured"
+
+        # ── OpenClaw Browser configuration ────────────────────
+        if [ "${OPENCLAW_BROWSER_ENABLED}" = "true" ]; then
+            echo ">> Configuring OpenClaw browser (CDP Chrome)..."
+            su - "${USER}" -c "openclaw config set browser.enabled true --json" 2>/dev/null || true
+            su - "${USER}" -c "openclaw config set browser.noSandbox true --json" 2>/dev/null || true
+            su - "${USER}" -c "openclaw config set browser.defaultProfile openclaw" 2>/dev/null || true
+            echo "Browser : enabled (profile: openclaw, noSandbox: true)"
+        else
+            echo "Browser : disabled (set OPENCLAW_BROWSER_ENABLED=true in .env to enable)"
+        fi
     else
         echo "Gateway : start failed (log: ${GATEWAY_LOG})"
         echo "  Manual: nohup openclaw gateway run >> ~/.openclaw/gateway.log 2>&1 & disown"
