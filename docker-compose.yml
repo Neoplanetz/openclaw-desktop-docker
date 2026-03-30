@@ -11,6 +11,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        OPENCLAW_VERSION: ${OPENCLAW_VERSION:-latest}
     container_name: openclaw-desktop
     hostname: openclaw
 
@@ -21,6 +23,7 @@ services:
       - VNC_RESOLUTION=1920x1080
       - VNC_COL_DEPTH=24
       - TZ=Asia/Seoul
+      - OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1
 
     # ── Port mapping ──
     ports:

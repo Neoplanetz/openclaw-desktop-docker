@@ -97,8 +97,9 @@ Docker 镜像已包含 Node.js 22、OpenClaw 及最小化的 `~/.openclaw/opencl
 
 1. 启动 VNC、NoVNC 和 xRDP 服务器
 2. 确认 OpenClaw 配置文件存在（缺失时重新生成）
-3. 在后台启动 OpenClaw Gateway（`openclaw gateway run`）
-4. 将 Chrome 设为 XFCE 默认浏览器
+3. 在 `~/.openclaw/.env` 中设置 `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`（允许通过 Docker 内部网络进行 Gateway 健康检查）
+4. 在后台启动 OpenClaw Gateway（`openclaw gateway run`）
+5. 将 Chrome 设为 XFCE 默认浏览器
 
 由于 Docker 没有 systemd，引导过程中的 Gateway 守护进程安装步骤会失败 — **这是正常的，可以安全忽略**。入口脚本直接管理 Gateway 进程。
 
@@ -217,6 +218,7 @@ docker compose up -d --build
 | — | `VNC_RESOLUTION` | `1920x1080` | 桌面分辨率 |
 | — | `VNC_COL_DEPTH` | `24` | 色深 |
 | — | `TZ` | `Asia/Seoul` | 时区 |
+| — | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS` | `1` | 允许对 Docker 内部私有 IP 使用明文 `ws://`（[详情](#docker-相关解决方案)） |
 
 ## 数据持久化
 
@@ -243,6 +245,7 @@ docker compose up -d --build
 | XFCE 默认浏览器 | 每次启动时设置自定义 exo-helper + `mimeapps.list` |
 | VNC 密码（缺少 `vncpasswd`） | 三级回退：`vncpasswd` 二进制 → `openssl` → 纯 Python DES |
 | Docker 中 Firefox snap 无法使用 | 替换为 Google Chrome deb 包 |
+| Gateway 健康检查阻止非回环 `ws://` | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` 允许对 RFC 1918 私有 IP 使用明文 `ws://`（仅限 Docker 内部网络，[v2026.2.19 中添加](https://github.com/openclaw/openclaw/pull/28670)） |
 
 ## 故障排除
 

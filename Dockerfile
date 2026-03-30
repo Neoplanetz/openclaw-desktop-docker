@@ -120,7 +120,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && node --version && npm --version
 
 # ── OpenClaw (baked into image, onboard on first run) ──
-RUN npm install -g openclaw@latest \
+ARG OPENCLAW_VERSION=latest
+RUN npm install -g openclaw@${OPENCLAW_VERSION} \
     && echo "OpenClaw $(openclaw --version 2>/dev/null || echo 'installed')"
 
 # ── vncpasswd binary check/symlink ────────────────────────

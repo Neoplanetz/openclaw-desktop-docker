@@ -460,6 +460,18 @@ CLAWCFG
     fi
 
     echo "Config  : ${OPENCLAW_CFG}"
+
+    # Docker bind:"lan" causes gateway URL to resolve to container LAN IP (172.x),
+    # which triggers OpenClaw's ws:// security check (CWE-319, added in v2026.2.19).
+    # This env var allows plaintext ws:// to RFC 1918 private IPs only.
+    OPENCLAW_ENV="${OPENCLAW_DIR}/.env"
+    touch "${OPENCLAW_ENV}"
+    if ! grep -q "^OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=" "${OPENCLAW_ENV}" 2>/dev/null; then
+        echo "OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1" >> "${OPENCLAW_ENV}"
+    fi
+    chown ${USER}:${USER} "${OPENCLAW_ENV}"
+    chmod 600 "${OPENCLAW_ENV}"
+
     echo ">> Starting OpenClaw Gateway..."
 
     GATEWAY_LOG="${OPENCLAW_DIR}/gateway.log"

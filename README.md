@@ -97,8 +97,9 @@ The Docker image ships with Node.js 22, OpenClaw, and a minimal `~/.openclaw/ope
 
 1. Starts VNC, NoVNC, and xRDP servers
 2. Ensures the OpenClaw config exists (regenerates if missing)
-3. Starts the OpenClaw Gateway in the background (`openclaw gateway run`)
-4. Sets Chrome as the default XFCE web browser
+3. Writes `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` to `~/.openclaw/.env` (allows Gateway health check over Docker's internal network)
+4. Starts the OpenClaw Gateway in the background (`openclaw gateway run`)
+5. Sets Chrome as the default XFCE web browser
 
 Since Docker has no systemd, the Gateway daemon install step during onboarding will fail — **this is expected and can be safely ignored**. The entrypoint manages the Gateway process directly.
 
@@ -217,6 +218,7 @@ These are set automatically from `.env` via `docker-compose.yml`:
 | — | `VNC_RESOLUTION` | `1920x1080` | Desktop resolution |
 | — | `VNC_COL_DEPTH` | `24` | Color depth |
 | — | `TZ` | `Asia/Seoul` | Timezone |
+| — | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS` | `1` | Allows plaintext `ws://` to Docker-internal private IPs ([details](#docker-specific-workarounds)) |
 
 ## Data Persistence
 
@@ -243,6 +245,7 @@ This setup includes several workarounds for running a full GUI + browser + OpenC
 | XFCE default browser | Custom exo-helper + `mimeapps.list` set on every start |
 | VNC password (`vncpasswd` missing) | 3-tier fallback: `vncpasswd` binary → `openssl` → pure Python DES |
 | Firefox snap broken in Docker | Replaced with Google Chrome deb package |
+| Gateway health check blocks `ws://` to non-loopback | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` permits plaintext `ws://` to RFC 1918 private IPs (Docker internal network only, [added in v2026.2.19](https://github.com/openclaw/openclaw/pull/28670)) |
 
 ## Troubleshooting
 

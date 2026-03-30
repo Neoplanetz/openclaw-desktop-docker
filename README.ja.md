@@ -97,8 +97,9 @@ Dockerイメージには、Node.js 22、OpenClaw、および最小限の`~/.open
 
 1. VNC、NoVNC、xRDPサーバーを起動
 2. OpenClaw設定ファイルの存在を確認（欠落時は再生成）
-3. バックグラウンドでOpenClaw Gatewayを起動（`openclaw gateway run`）
-4. ChromeをXFCEのデフォルトWebブラウザに設定
+3. `~/.openclaw/.env`に`OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`を設定（Docker内部ネットワーク経由のGatewayヘルスチェックを許可）
+4. バックグラウンドでOpenClaw Gatewayを起動（`openclaw gateway run`）
+5. ChromeをXFCEのデフォルトWebブラウザに設定
 
 Dockerにはsystemdがないため、オンボーディング中のGatewayデーモンインストールステップは失敗します — **これは想定通りであり、安全に無視できます**。エントリポイントがGatewayプロセスを直接管理します。
 
@@ -217,6 +218,7 @@ docker compose up -d --build
 | — | `VNC_RESOLUTION` | `1920x1080` | デスクトップ解像度 |
 | — | `VNC_COL_DEPTH` | `24` | 色深度 |
 | — | `TZ` | `Asia/Seoul` | タイムゾーン |
+| — | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS` | `1` | Docker内部のプライベートIPへのプレーンテキスト`ws://`を許可（[詳細](#docker固有の回避策)） |
 
 ## データの永続化
 
@@ -243,6 +245,7 @@ docker compose up -d --build
 | XFCEデフォルトブラウザ | 起動ごとにカスタムexo-helper + `mimeapps.list`を設定 |
 | VNCパスワード（`vncpasswd`なし） | 3段階フォールバック：`vncpasswd`バイナリ → `openssl` → 純粋なPython DES |
 | DockerでFirefox snapが動作しない | Google Chrome debパッケージに置き換え |
+| Gatewayヘルスチェックが非ループバック`ws://`をブロック | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`でRFC 1918プライベートIPへのプレーンテキスト`ws://`を許可（Docker内部ネットワークのみ、[v2026.2.19で追加](https://github.com/openclaw/openclaw/pull/28670)） |
 
 ## トラブルシューティング
 

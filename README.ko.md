@@ -97,8 +97,9 @@ Docker 이미지에 Node.js 22, OpenClaw, 최소 `~/.openclaw/openclaw.json` 설
 
 1. VNC, NoVNC, xRDP 서버 시작
 2. OpenClaw 설정 파일 존재 확인 (없으면 재생성)
-3. 백그라운드에서 OpenClaw Gateway 시작 (`openclaw gateway run`)
-4. Chrome을 XFCE 기본 웹 브라우저로 설정
+3. `~/.openclaw/.env`에 `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` 설정 (Docker 내부 네트워크를 통한 Gateway health check 허용)
+4. 백그라운드에서 OpenClaw Gateway 시작 (`openclaw gateway run`)
+5. Chrome을 XFCE 기본 웹 브라우저로 설정
 
 Docker에는 systemd가 없으므로, 온보딩 중 Gateway 데몬 설치 단계는 실패합니다 — **이는 정상이며 무시해도 됩니다**. 엔트리포인트가 Gateway 프로세스를 직접 관리합니다.
 
@@ -217,6 +218,7 @@ docker compose up -d --build
 | — | `VNC_RESOLUTION` | `1920x1080` | 데스크톱 해상도 |
 | — | `VNC_COL_DEPTH` | `24` | 색 심도 |
 | — | `TZ` | `Asia/Seoul` | 시간대 |
+| — | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS` | `1` | Docker 내부 사설 IP에 대한 plaintext `ws://` 허용 ([상세](#docker-관련-우회-방법)) |
 
 ## 데이터 영속성
 
@@ -243,6 +245,7 @@ docker compose up -d --build
 | XFCE 기본 브라우저 | 매 시작 시 커스텀 exo-helper + `mimeapps.list` 설정 |
 | VNC 비밀번호 (`vncpasswd` 없음) | 3단계 폴백: `vncpasswd` 바이너리 → `openssl` → 순수 Python DES |
 | Docker에서 Firefox snap 미작동 | Google Chrome deb 패키지로 대체 |
+| Gateway health check가 non-loopback `ws://` 차단 | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`로 RFC 1918 사설 IP에 대한 plaintext `ws://` 허용 (Docker 내부 네트워크만 해당, [v2026.2.19에서 추가](https://github.com/openclaw/openclaw/pull/28670)) |
 
 ## 문제 해결
 
