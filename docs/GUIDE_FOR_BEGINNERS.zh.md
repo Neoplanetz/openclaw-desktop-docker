@@ -368,7 +368,7 @@ Chrome 浏览器打开后可能会出现登录弹窗。点击 **OK**，然后选
 
 ![21](images/21-dashboard-auto.png)
 
-可能会出现"Gateway daemon install failed"的提示，但这是**正常现象，请忽略。** 稍等片刻，OpenClaw Dashboard 界面会自动打开。
+可能会出现"Gateway daemon install failed"的提示，但这是**正常现象，请忽略。** 选择 Open the Web UI，即可打开 OpenClaw Dashboard 界面。
 
 ### 5-18. 确认设置完成
 

@@ -13,7 +13,7 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
   <img src="assets/openclaw_desktop_web.png" width="49%" />
 </p>
 
-> **New to Docker?** Check out the [Beginner's Guide](docs/GUIDE_FOR_BEGINNERS.en.md) for step-by-step instructions with screenshots.
+> **New to Docker?** Check out the [Beginner's Guide](docs/GUIDE_FOR_BEGINNERS.md) for step-by-step instructions with screenshots.
 
 ## Architecture
 
