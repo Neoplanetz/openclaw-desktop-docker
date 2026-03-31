@@ -104,6 +104,7 @@ echo 'OPENAI_API_KEY=sk-...' >> ~/.openclaw/.env
 |----------|---------|---------|-------------|
 | `CLAW_USER` | `USER` | `claw` | Linux username |
 | `CLAW_PASSWORD` | `PASSWORD` | `claw1234` | VNC / RDP / sudo password |
+| `OPENCLAW_VERSION` | *(build arg)* | `latest` | OpenClaw npm package version (e.g. `latest`, `2026.3.28`) — used at `docker compose build` time |
 | — | `VNC_RESOLUTION` | `1920x1080` | Desktop resolution |
 | — | `VNC_COL_DEPTH` | `24` | Color depth |
 | — | `TZ` | `Asia/Seoul` | Timezone |

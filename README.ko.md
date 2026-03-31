@@ -231,6 +231,7 @@ docker compose up -d --build
 |----------|---------|---------|-------------|
 | `CLAW_USER` | `USER` | `claw` | Linux 사용자명 |
 | `CLAW_PASSWORD` | `PASSWORD` | `claw1234` | VNC / RDP / sudo 비밀번호 |
+| `OPENCLAW_VERSION` | *(빌드 인자)* | `latest` | OpenClaw npm 패키지 버전 (예: `latest`, `2026.3.28`) — `docker compose build` 시 사용 |
 | — | `VNC_RESOLUTION` | `1920x1080` | 데스크톱 해상도 |
 | — | `VNC_COL_DEPTH` | `24` | 색 심도 |
 | — | `TZ` | `Asia/Seoul` | 시간대 |

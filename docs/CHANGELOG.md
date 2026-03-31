@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-03-31
+
+### Added
+- Document `OPENCLAW_VERSION` build arg in all READMEs (EN, KO, ZH, JA), Docker Hub overview, and `.env` file
+  - Allows pinning a specific OpenClaw npm version at build time (e.g. `OPENCLAW_VERSION=2026.3.28`)
+
 ## [1.2.0] - 2026-03-31
 
 ### Added
