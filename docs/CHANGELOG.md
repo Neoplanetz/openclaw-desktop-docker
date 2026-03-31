@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-03-31
+
+### Added
+- Policy-based X11 display targeting via `openclaw-sync-display` helper for seamless VNC ↔ xRDP switching
+- Auto display-sync `.bashrc` hook — detects display changes when opening new terminals across sessions
+- xRDP reconnection hook (`reconnectwm.sh`) for display sync on session reconnect
+- `OPENCLAW_BROWSER_ENABLED` option for OpenClaw CDP browser support
+- `OPENCLAW_DISPLAY_TARGET` environment variable with `auto` / `vnc` / `rdp` modes
+- `OPENCLAW_X_DISPLAY` and `OPENCLAW_X_AUTHORITY` hard override environment variables
+
+### Changed
+- Entrypoint display/XAUTHORITY handling replaced with `openclaw-sync-display` helper (policy-based, lock-protected)
+- VNC `xstartup` and xRDP `startwm.sh` now call `openclaw-sync-display` before desktop start
+- Updated all README files (EN, KO, ZH, JA) and Docker Hub overview with new environment variables, workarounds, and file structure
+
 ## [1.1.1] - 2026-03-27
 
 ### Added

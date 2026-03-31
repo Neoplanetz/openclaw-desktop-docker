@@ -20,7 +20,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     RDP_PORT=3389 \
     DISPLAY=:1 \
     VNC_RESOLUTION=1920x1080 \
-    VNC_COL_DEPTH=24
+    VNC_COL_DEPTH=24 \
+    OPENCLAW_DISPLAY_TARGET=auto
 
 # ── Base packages + locale ─────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -178,10 +179,15 @@ COPY configs/ /opt/openclaw-configs/
 
 # Replace startwm.sh with XFCE4 (xRDP session startup)
 COPY configs/xrdp/startwm.sh /etc/xrdp/startwm.sh
-RUN chmod +x /etc/xrdp/startwm.sh
+COPY configs/xrdp/reconnectwm.sh /etc/xrdp/reconnectwm.sh
+RUN chmod +x /etc/xrdp/startwm.sh /etc/xrdp/reconnectwm.sh
 
 # ── NoVNC symlink (unified path) ─────────────────────────
 RUN ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html 2>/dev/null || true
+
+# ── Display sync helper (policy-based display targeting) ─────
+COPY scripts/openclaw-sync-display /usr/local/bin/openclaw-sync-display
+RUN chmod +x /usr/local/bin/openclaw-sync-display
 
 # ── Entrypoint script ─────────────────────────────────────────
 COPY entrypoint.sh /entrypoint.sh

@@ -1,4 +1,9 @@
 #!/bin/bash
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
+
+# Sync display targeting before desktop starts
+# (mode is read from ~/.openclaw/.env — login shells don't inherit Docker env)
+openclaw-sync-display "$(whoami)" || true
+
 exec dbus-launch --exit-with-session startxfce4

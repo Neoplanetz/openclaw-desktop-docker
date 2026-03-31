@@ -97,9 +97,10 @@ Docker 镜像已包含 Node.js 22、OpenClaw 及最小化的 `~/.openclaw/opencl
 
 1. 启动 VNC、NoVNC 和 xRDP 服务器
 2. 确认 OpenClaw 配置文件存在（缺失时重新生成）
-3. 在 `~/.openclaw/.env` 中设置 `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`（允许通过 Docker 内部网络进行 Gateway 健康检查）
+3. 运行 `openclaw-sync-display` 配置 DISPLAY / XAUTHORITY 目标（自动检测 VNC 与 xRDP 会话），并在 `~/.openclaw/.env` 中设置 `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`
 4. 在后台启动 OpenClaw Gateway（`openclaw gateway run`）
 5. 将 Chrome 设为 XFCE 默认浏览器
+6. 安装 `.bashrc` 钩子，在 VNC 和 RDP 会话切换时自动同步显示
 
 由于 Docker 没有 systemd，引导过程中的 Gateway 守护进程安装步骤会失败 — **这是正常的，可以安全忽略**。入口脚本直接管理 Gateway 进程。
 
@@ -219,6 +220,10 @@ docker compose up -d --build
 | — | `VNC_COL_DEPTH` | `24` | 色深 |
 | — | `TZ` | `Asia/Seoul` | 时区 |
 | — | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS` | `1` | 允许对 Docker 内部私有 IP 使用明文 `ws://`（[详情](#docker-相关解决方案)） |
+| `OPENCLAW_BROWSER_ENABLED` | `OPENCLAW_BROWSER_ENABLED` | `false` | 启用 OpenClaw CDP 浏览器（Chrome 配置文件：`openclaw`，`--no-sandbox`） |
+| `OPENCLAW_DISPLAY_TARGET` | `OPENCLAW_DISPLAY_TARGET` | `auto` | 显示目标策略：`auto`、`vnc`、`rdp` |
+| — | `OPENCLAW_X_DISPLAY` | — | DISPLAY 硬覆盖（例如：`:1`、`:10`） |
+| — | `OPENCLAW_X_AUTHORITY` | — | XAUTHORITY 路径硬覆盖 |
 
 ## 数据持久化
 
@@ -246,6 +251,7 @@ docker compose up -d --build
 | VNC 密码（缺少 `vncpasswd`） | 三级回退：`vncpasswd` 二进制 → `openssl` → 纯 Python DES |
 | Docker 中 Firefox snap 无法使用 | 替换为 Google Chrome deb 包 |
 | Gateway 健康检查阻止非回环 `ws://` | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` 允许对 RFC 1918 私有 IP 使用明文 `ws://`（仅限 Docker 内部网络，[v2026.2.19 中添加](https://github.com/openclaw/openclaw/pull/28670)） |
+| VNC↔RDP 显示不匹配 | `openclaw-sync-display` 助手自动检测活动会话（VNC `:1` vs xRDP `:10+`），使用正确的 DISPLAY 重启 Gateway；`.bashrc` 钩子捕获切换 |
 
 ## 故障排除
 
@@ -296,6 +302,13 @@ openclaw-desktop-docker/
 │   ├── architecture_*.svg
 │   ├── dockerized_openclaw.png
 │   └── openclaw_desktop_web.png
+├── configs/                    # 配置模板（构建/运行时复制）
+│   ├── vnc/xstartup            # VNC 会话启动
+│   ├── xrdp/startwm.sh        # xRDP 会话启动
+│   ├── xrdp/reconnectwm.sh    # xRDP 重新连接钩子
+│   └── ...
+├── scripts/                    # 辅助脚本
+│   └── openclaw-sync-display   # 基于策略的 X11 显示目标
 └── docs/                       # 指南 & 更新日志
     ├── CHANGELOG.md
     ├── DOCKERHUB_OVERVIEW.md

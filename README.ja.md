@@ -97,9 +97,10 @@ Dockerイメージには、Node.js 22、OpenClaw、および最小限の`~/.open
 
 1. VNC、NoVNC、xRDPサーバーを起動
 2. OpenClaw設定ファイルの存在を確認（欠落時は再生成）
-3. `~/.openclaw/.env`に`OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`を設定（Docker内部ネットワーク経由のGatewayヘルスチェックを許可）
+3. `openclaw-sync-display`を実行してDISPLAY / XAUTHORITYターゲティングを構成（VNC vs xRDPセッションを自動検出）し、`~/.openclaw/.env`に`OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`を設定
 4. バックグラウンドでOpenClaw Gatewayを起動（`openclaw gateway run`）
 5. ChromeをXFCEのデフォルトWebブラウザに設定
+6. VNC ↔ RDPセッション切替時にディスプレイを自動同期する`.bashrc`フックをインストール
 
 Dockerにはsystemdがないため、オンボーディング中のGatewayデーモンインストールステップは失敗します — **これは想定通りであり、安全に無視できます**。エントリポイントがGatewayプロセスを直接管理します。
 
@@ -219,6 +220,10 @@ docker compose up -d --build
 | — | `VNC_COL_DEPTH` | `24` | 色深度 |
 | — | `TZ` | `Asia/Seoul` | タイムゾーン |
 | — | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS` | `1` | Docker内部のプライベートIPへのプレーンテキスト`ws://`を許可（[詳細](#docker固有の回避策)） |
+| `OPENCLAW_BROWSER_ENABLED` | `OPENCLAW_BROWSER_ENABLED` | `false` | OpenClaw CDPブラウザを有効化（Chromeプロファイル：`openclaw`、`--no-sandbox`） |
+| `OPENCLAW_DISPLAY_TARGET` | `OPENCLAW_DISPLAY_TARGET` | `auto` | ディスプレイターゲティングポリシー：`auto`、`vnc`、`rdp` |
+| — | `OPENCLAW_X_DISPLAY` | — | DISPLAYのハードオーバーライド（例：`:1`、`:10`） |
+| — | `OPENCLAW_X_AUTHORITY` | — | XAUTHORITYパスのハードオーバーライド |
 
 ## データの永続化
 
@@ -246,6 +251,7 @@ docker compose up -d --build
 | VNCパスワード（`vncpasswd`なし） | 3段階フォールバック：`vncpasswd`バイナリ → `openssl` → 純粋なPython DES |
 | DockerでFirefox snapが動作しない | Google Chrome debパッケージに置き換え |
 | Gatewayヘルスチェックが非ループバック`ws://`をブロック | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`でRFC 1918プライベートIPへのプレーンテキスト`ws://`を許可（Docker内部ネットワークのみ、[v2026.2.19で追加](https://github.com/openclaw/openclaw/pull/28670)） |
+| VNC↔RDPディスプレイ不一致 | `openclaw-sync-display`ヘルパーがアクティブセッションを自動検出（VNC `:1` vs xRDP `:10+`）、正しいDISPLAYでGatewayを再起動；`.bashrc`フックで切替を検知 |
 
 ## トラブルシューティング
 
@@ -296,6 +302,13 @@ openclaw-desktop-docker/
 │   ├── architecture_*.svg
 │   ├── dockerized_openclaw.png
 │   └── openclaw_desktop_web.png
+├── configs/                    # 設定テンプレート（ビルド/ランタイム時にコピー）
+│   ├── vnc/xstartup            # VNCセッション起動
+│   ├── xrdp/startwm.sh        # xRDPセッション起動
+│   ├── xrdp/reconnectwm.sh    # xRDP再接続フック
+│   └── ...
+├── scripts/                    # ヘルパースクリプト
+│   └── openclaw-sync-display   # ポリシーベースX11ディスプレイターゲティング
 └── docs/                       # ガイド & 変更履歴
     ├── CHANGELOG.md
     ├── DOCKERHUB_OVERVIEW.md

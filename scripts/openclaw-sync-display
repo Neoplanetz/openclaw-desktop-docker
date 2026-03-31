@@ -1,0 +1,210 @@
+#!/bin/bash
+# ============================================================
+# openclaw-sync-display — Policy-based X11 display targeting
+# ============================================================
+# Updates ~/.openclaw/.env so OpenClaw gateway launches the
+# browser on the correct X display (VNC :1 vs xRDP :10+).
+#
+# Usage:  openclaw-sync-display <username> [auto|vnc|rdp]
+#
+# Environment:
+#   OPENCLAW_X_DISPLAY      Hard override for DISPLAY
+#   OPENCLAW_X_AUTHORITY    Hard override for XAUTHORITY
+#   OPENCLAW_DISPLAY_TARGET Default target mode (auto|vnc|rdp)
+#   XRDP_SESSION            Set by xRDP startwm.sh before calling
+# ============================================================
+set -euo pipefail
+
+LOCKDIR="/tmp/.openclaw-sync-display.lk"
+LOG_TAG="openclaw-sync-display"
+
+log() { echo "[${LOG_TAG}] $(date '+%H:%M:%S') $*"; }
+
+# ── Arguments ────────────────────────────────────────────────
+TARGET_USER="${1:?Usage: openclaw-sync-display <username> [auto|vnc|rdp]}"
+
+# Resolve target mode: arg > process env > persisted .env > default
+# Session hooks (xstartup/startwm.sh) run under login shells that don't
+# inherit Docker env vars, so we fall back to the .env file written by
+# the entrypoint's bootstrap call.
+TARGET_MODE="${2:-${OPENCLAW_DISPLAY_TARGET:-}}"
+if [ -z "${TARGET_MODE}" ]; then
+    TARGET_MODE=$(grep '^OPENCLAW_DISPLAY_TARGET=' "/home/${TARGET_USER}/.openclaw/.env" 2>/dev/null | cut -d= -f2) || true
+    TARGET_MODE="${TARGET_MODE:-auto}"
+fi
+
+# ── Lock (mkdir is atomic and works across all users/contexts) ──
+acquire_lock() {
+    local i=0
+    while ! mkdir "${LOCKDIR}" 2>/dev/null; do
+        i=$((i + 1))
+        if [ $i -ge 5 ]; then
+            log "WARN: lock timeout — forcing"
+            rm -rf "${LOCKDIR}" 2>/dev/null || true
+            mkdir "${LOCKDIR}" 2>/dev/null || true
+            return
+        fi
+        sleep 1
+    done
+}
+release_lock() { rm -rf "${LOCKDIR}" 2>/dev/null || true; }
+trap release_lock EXIT
+
+acquire_lock
+
+# ── Paths ────────────────────────────────────────────────────
+OPENCLAW_DIR="/home/${TARGET_USER}/.openclaw"
+OPENCLAW_ENV="${OPENCLAW_DIR}/.env"
+mkdir -p "${OPENCLAW_DIR}"
+touch "${OPENCLAW_ENV}"
+
+# ── Run a shell command string as the target user ───────────
+run_cmd() {
+    if [ "$(id -u)" = "0" ]; then
+        su - "${TARGET_USER}" -c "$1"
+    else
+        bash -c "$1"
+    fi
+}
+
+# ── Resolve DISPLAY ─────────────────────────────────────────
+resolve_display() {
+    # Priority 1: hard override
+    if [ -n "${OPENCLAW_X_DISPLAY:-}" ]; then
+        echo "${OPENCLAW_X_DISPLAY}"
+        return
+    fi
+
+    case "${TARGET_MODE}" in
+        vnc)
+            echo ":1"
+            ;;
+        rdp)
+            if [ -n "${XRDP_SESSION:-}" ]; then
+                echo "${XRDP_SESSION}"
+            else
+                # Scan for RDP displays (typically >= :10)
+                local found=""
+                for sock in /tmp/.X11-unix/X*; do
+                    [ -S "$sock" ] || continue
+                    local num
+                    num="$(basename "$sock" | sed 's/^X//')"
+                    if [ "${num}" -ge 10 ] 2>/dev/null; then
+                        found=":${num}"
+                        break
+                    fi
+                done
+                echo "${found:-:1}"
+            fi
+            ;;
+        auto|*)
+            # RDP session detected → use it
+            if [ -n "${XRDP_SESSION:-}" ]; then
+                echo "${XRDP_SESSION}"
+                return
+            fi
+            # Default to VNC :1, verify socket exists
+            if [ -S "/tmp/.X11-unix/X1" ]; then
+                echo ":1"
+                return
+            fi
+            # Fallback: first available X socket
+            for sock in /tmp/.X11-unix/X*; do
+                if [ -S "$sock" ]; then
+                    echo ":$(basename "$sock" | sed 's/^X//')"
+                    return
+                fi
+            done
+            echo ":1"
+            ;;
+    esac
+}
+
+NEW_DISPLAY="$(resolve_display)"
+NEW_XAUTHORITY="${OPENCLAW_X_AUTHORITY:-/home/${TARGET_USER}/.Xauthority}"
+
+log "mode=${TARGET_MODE} DISPLAY=${NEW_DISPLAY} XAUTHORITY=${NEW_XAUTHORITY}"
+
+# ── Detect if gateway needs a display update ─────────────────
+# Compare against the running gateway's actual DISPLAY, not .env.
+# .env may already have the new value from a prior run that failed
+# to restart the gateway, giving a false "no change" result.
+DISPLAY_CHANGED=false
+
+GW_PID=$(pgrep -u "${TARGET_USER}" -f 'openclaw-gateway' 2>/dev/null | head -1) || true
+if [ -n "${GW_PID}" ]; then
+    GW_DISPLAY=""
+    GW_DISPLAY=$(tr '\0' '\n' < "/proc/${GW_PID}/environ" 2>/dev/null | grep '^DISPLAY=' | cut -d= -f2) || true
+    if [ "${GW_DISPLAY}" != "${NEW_DISPLAY}" ]; then
+        DISPLAY_CHANGED=true
+        log "Gateway DISPLAY mismatch: process=${GW_DISPLAY:-<unset>} → target=${NEW_DISPLAY}"
+    fi
+else
+    # No gateway running — check .env for stale value
+    OLD_DISPLAY=$(grep '^DISPLAY=' "${OPENCLAW_ENV}" 2>/dev/null | cut -d= -f2) || true
+    if [ -n "${OLD_DISPLAY}" ] && [ "${OLD_DISPLAY}" != "${NEW_DISPLAY}" ]; then
+        DISPLAY_CHANGED=true
+        log "Display changed in .env: ${OLD_DISPLAY} → ${NEW_DISPLAY}"
+    fi
+fi
+
+# ── Update ~/.openclaw/.env ─────────────────────────────────
+env_set() {
+    local key="$1" val="$2"
+    if grep -q "^${key}=" "${OPENCLAW_ENV}" 2>/dev/null; then
+        sed -i "s|^${key}=.*|${key}=${val}|" "${OPENCLAW_ENV}"
+    else
+        echo "${key}=${val}" >> "${OPENCLAW_ENV}"
+    fi
+}
+
+env_set "DISPLAY"                            "${NEW_DISPLAY}"
+env_set "XAUTHORITY"                         "${NEW_XAUTHORITY}"
+env_set "OPENCLAW_ALLOW_INSECURE_PRIVATE_WS" "1"
+env_set "OPENCLAW_DISPLAY_TARGET"            "${TARGET_MODE}"
+
+if [ "$(id -u)" = "0" ]; then
+    chown "${TARGET_USER}:${TARGET_USER}" "${OPENCLAW_ENV}"
+fi
+chmod 600 "${OPENCLAW_ENV}"
+
+# ── Refresh OpenClaw browser on display change ──────────────
+if [ "${DISPLAY_CHANGED}" = "true" ]; then
+    log "Refreshing OpenClaw for DISPLAY=${NEW_DISPLAY}..."
+
+    # Step 1: Stop browser + kill OpenClaw Chrome on old display
+    run_cmd "openclaw browser stop" 2>/dev/null || true
+    for pid in $(pgrep -u "${TARGET_USER}" chrome 2>/dev/null); do
+        cmdline=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)
+        [ -z "${cmdline}" ] && continue
+        if echo "${cmdline}" | grep -q "user-data-dir=.*/openclaw/"; then
+            log "Killing OpenClaw Chrome PID ${pid}"
+            kill "${pid}" 2>/dev/null || true
+        fi
+    done
+
+    # Step 2: Restart gateway — it caches DISPLAY in process env,
+    # so updating .env alone is not enough for the running process.
+    # Note: the binary name is "openclaw-gateway" (hyphen), not "openclaw gateway" (space).
+    # Using pgrep -u + -f with the exact binary name avoids false matches
+    # from su -c "..." command strings that contain "openclaw gateway".
+    if pgrep -u "${TARGET_USER}" -f 'openclaw-gateway' >/dev/null 2>&1; then
+        log "Restarting gateway with DISPLAY=${NEW_DISPLAY}..."
+        pkill -u "${TARGET_USER}" -f 'openclaw-gateway' 2>/dev/null || true
+        sleep 2
+        GATEWAY_LOG="${OPENCLAW_DIR}/gateway.log"
+        run_cmd "DISPLAY='${NEW_DISPLAY}' XAUTHORITY='${NEW_XAUTHORITY}' nohup openclaw gateway run >> '${GATEWAY_LOG}' 2>&1 &" 2>/dev/null || true
+        sleep 3
+        if pgrep -u "${TARGET_USER}" -f 'openclaw-gateway' >/dev/null 2>&1; then
+            log "Gateway restarted ✓"
+        else
+            log "WARN: Gateway may not have restarted (check ${GATEWAY_LOG})"
+        fi
+    fi
+
+    # Browser auto-reopen intentionally omitted — user controls when to
+    # launch via "openclaw browser open <url>", which now targets the
+    # correct display after gateway restart.
+fi
+
+log "Done."

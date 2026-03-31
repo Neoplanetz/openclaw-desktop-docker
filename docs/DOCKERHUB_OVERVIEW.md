@@ -105,6 +105,8 @@ echo 'OPENAI_API_KEY=sk-...' >> ~/.openclaw/.env
 | — | `VNC_RESOLUTION` | `1920x1080` | Desktop resolution |
 | — | `VNC_COL_DEPTH` | `24` | Color depth |
 | — | `TZ` | `Asia/Seoul` | Timezone |
+| `OPENCLAW_BROWSER_ENABLED` | `OPENCLAW_BROWSER_ENABLED` | `false` | Enable OpenClaw CDP browser (Chrome profile: `openclaw`) |
+| `OPENCLAW_DISPLAY_TARGET` | `OPENCLAW_DISPLAY_TARGET` | `auto` | Display targeting policy: `auto`, `vnc`, `rdp` |
 
 ## Data Persistence
 

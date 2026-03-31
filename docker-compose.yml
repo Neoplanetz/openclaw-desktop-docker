@@ -25,6 +25,9 @@ services:
       - TZ=Asia/Seoul
       - OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1
       - OPENCLAW_BROWSER_ENABLED=${OPENCLAW_BROWSER_ENABLED:-false}
+      - OPENCLAW_DISPLAY_TARGET=${OPENCLAW_DISPLAY_TARGET:-auto}
+      # - OPENCLAW_X_DISPLAY=        # Hard override (e.g. :1, :10)
+      # - OPENCLAW_X_AUTHORITY=      # Hard override for Xauthority path
 
     # ── Port mapping ──
     ports:

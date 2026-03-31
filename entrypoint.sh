@@ -8,6 +8,7 @@ NOVNC_PORT="${NOVNC_PORT:-6080}"
 VNC_RESOLUTION="${VNC_RESOLUTION:-1920x1080}"
 VNC_COL_DEPTH="${VNC_COL_DEPTH:-24}"
 OPENCLAW_BROWSER_ENABLED="${OPENCLAW_BROWSER_ENABLED:-false}"
+OPENCLAW_DISPLAY_TARGET="${OPENCLAW_DISPLAY_TARGET:-auto}"
 
 # ── Dynamic user creation ────────────────────────────────
 # Creates the Linux user at runtime so that USER/PASSWORD
@@ -136,9 +137,10 @@ sleep 1
 # ── Start xRDP ─────────────────────────────────────────────
 echo ">> Starting xRDP server (port 3389)..."
 
-# Regenerate startwm.sh (XFCE4 session)
+# Regenerate startwm.sh + reconnectwm.sh (xRDP session hooks)
 cp /opt/openclaw-configs/xrdp/startwm.sh /etc/xrdp/startwm.sh
-chmod +x /etc/xrdp/startwm.sh
+cp /opt/openclaw-configs/xrdp/reconnectwm.sh /etc/xrdp/reconnectwm.sh
+chmod +x /etc/xrdp/startwm.sh /etc/xrdp/reconnectwm.sh
 
 if [ ! -f /etc/xrdp/rsakeys.ini ]; then
     xrdp-keygen xrdp /etc/xrdp/rsakeys.ini 2>/dev/null || true
@@ -186,6 +188,31 @@ rm -f /home/${USER}/.config/google-chrome/SingletonCookie 2>/dev/null || true
 chown -R ${USER}:${USER} /home/${USER}/.config
 chown -R ${USER}:${USER} /home/${USER}/.local
 
+# ── Auto display-sync on terminal open (.bashrc hook) ────────────────
+# VNC sessions persist across reconnects (xstartup doesn't re-run),
+# so we add a lightweight check to .bashrc: if the current terminal's
+# DISPLAY differs from the gateway's, run openclaw-sync-display.
+# This handles both VNC→RDP and RDP→VNC transitions.
+BASHRC="/home/${USER}/.bashrc"
+SYNC_MARKER="# openclaw-display-sync"
+if ! grep -q "${SYNC_MARKER}" "${BASHRC}" 2>/dev/null; then
+    cat >> "${BASHRC}" << 'BASHRC_EOF'
+
+# openclaw-display-sync
+# Auto-detect display change when opening a new terminal (VNC↔RDP)
+if command -v openclaw-sync-display >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+    _oc_gw_pid=$(pgrep -u "$(id -u)" -f 'openclaw-gateway' 2>/dev/null | head -1)
+    if [ -n "${_oc_gw_pid}" ]; then
+        _oc_gw_disp=$(tr '\0' '\n' < "/proc/${_oc_gw_pid}/environ" 2>/dev/null | grep '^DISPLAY=' | cut -d= -f2)
+        if [ -n "${_oc_gw_disp}" ] && [ "${_oc_gw_disp}" != "${DISPLAY}" ]; then
+            openclaw-sync-display "$(whoami)" 2>/dev/null || true
+        fi
+    fi
+    unset _oc_gw_pid _oc_gw_disp
+fi
+BASHRC_EOF
+fi
+
 # ── Desktop shortcuts (regenerate if missing from volume) ────────────
 DESKTOP_DIR="/home/${USER}/Desktop"
 mkdir -p "${DESKTOP_DIR}"
@@ -229,53 +256,41 @@ if command -v openclaw &>/dev/null; then
 
     echo "Config  : ${OPENCLAW_CFG}"
 
-    # Docker bind:"lan" causes gateway URL to resolve to container LAN IP (172.x),
-    # which triggers OpenClaw's ws:// security check (CWE-319, added in v2026.2.19).
-    # This env var allows plaintext ws:// to RFC 1918 private IPs only.
+    # ── Policy-based display targeting ─────────────────────────
+    # Replaces naive one-time detection. The helper script handles:
+    # - DISPLAY / XAUTHORITY resolution (auto / vnc / rdp / override)
+    # - OPENCLAW_ALLOW_INSECURE_PRIVATE_WS flag
+    # - Browser/gateway restart on display change
     OPENCLAW_ENV="${OPENCLAW_DIR}/.env"
     touch "${OPENCLAW_ENV}"
-    if ! grep -q "^OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=" "${OPENCLAW_ENV}" 2>/dev/null; then
-        echo "OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1" >> "${OPENCLAW_ENV}"
-    fi
 
-    # ── Auto-detect X11 DISPLAY and XAUTHORITY ─────────────────
-    # Always register these so browser features work without manual setup.
-    # OpenClaw gateway reads ~/.openclaw/.env to find the X11 display
-    # when launching Chrome via CDP (browser profile "openclaw").
-    DETECTED_DISPLAY="${DISPLAY:-:1}"
-    if [ ! -S "/tmp/.X11-unix/X${DETECTED_DISPLAY#:}" ]; then
-        # Configured DISPLAY socket not found — scan for any active one
-        for sock in /tmp/.X11-unix/X*; do
-            if [ -S "$sock" ]; then
-                DETECTED_DISPLAY=":$(basename "$sock" | sed 's/^X//')"
-                break
-            fi
-        done
+    # Bootstrap display targeting (helper creates/updates .env)
+    if ! openclaw-sync-display "${USER}" "${OPENCLAW_DISPLAY_TARGET}"; then
+        # Fallback: write essential values directly so gateway can start
+        echo ">> WARN: display sync helper failed — using fallback DISPLAY=:1"
+        grep -q "^DISPLAY=" "${OPENCLAW_ENV}" 2>/dev/null \
+            && sed -i "s|^DISPLAY=.*|DISPLAY=:1|" "${OPENCLAW_ENV}" \
+            || echo "DISPLAY=:1" >> "${OPENCLAW_ENV}"
+        grep -q "^XAUTHORITY=" "${OPENCLAW_ENV}" 2>/dev/null \
+            && sed -i "s|^XAUTHORITY=.*|XAUTHORITY=/home/${USER}/.Xauthority|" "${OPENCLAW_ENV}" \
+            || echo "XAUTHORITY=/home/${USER}/.Xauthority" >> "${OPENCLAW_ENV}"
+        grep -q "^OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=" "${OPENCLAW_ENV}" 2>/dev/null \
+            || echo "OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1" >> "${OPENCLAW_ENV}"
     fi
-    DETECTED_XAUTHORITY="/home/${USER}/.Xauthority"
-
-    # Update or add DISPLAY
-    if grep -q "^DISPLAY=" "${OPENCLAW_ENV}" 2>/dev/null; then
-        sed -i "s|^DISPLAY=.*|DISPLAY=${DETECTED_DISPLAY}|" "${OPENCLAW_ENV}"
-    else
-        echo "DISPLAY=${DETECTED_DISPLAY}" >> "${OPENCLAW_ENV}"
-    fi
-    # Update or add XAUTHORITY
-    if grep -q "^XAUTHORITY=" "${OPENCLAW_ENV}" 2>/dev/null; then
-        sed -i "s|^XAUTHORITY=.*|XAUTHORITY=${DETECTED_XAUTHORITY}|" "${OPENCLAW_ENV}"
-    else
-        echo "XAUTHORITY=${DETECTED_XAUTHORITY}" >> "${OPENCLAW_ENV}"
-    fi
-    echo "   DISPLAY=${DETECTED_DISPLAY}"
-    echo "   XAUTHORITY=${DETECTED_XAUTHORITY}"
-
     chown ${USER}:${USER} "${OPENCLAW_ENV}"
     chmod 600 "${OPENCLAW_ENV}"
+
+    echo "   DISPLAY=$(grep '^DISPLAY=' "${OPENCLAW_ENV}" 2>/dev/null | cut -d= -f2)"
+    echo "   XAUTHORITY=$(grep '^XAUTHORITY=' "${OPENCLAW_ENV}" 2>/dev/null | cut -d= -f2)"
 
     echo ">> Starting OpenClaw Gateway..."
 
     GATEWAY_LOG="${OPENCLAW_DIR}/gateway.log"
-    su - "${USER}" -c "nohup openclaw gateway run >> ${GATEWAY_LOG} 2>&1 &"
+    BOOT_DISPLAY=$(grep '^DISPLAY=' "${OPENCLAW_ENV}" 2>/dev/null | cut -d= -f2)
+    BOOT_DISPLAY="${BOOT_DISPLAY:-:1}"
+    BOOT_XAUTHORITY=$(grep '^XAUTHORITY=' "${OPENCLAW_ENV}" 2>/dev/null | cut -d= -f2)
+    BOOT_XAUTHORITY="${BOOT_XAUTHORITY:-/home/${USER}/.Xauthority}"
+    su - "${USER}" -c "DISPLAY='${BOOT_DISPLAY}' XAUTHORITY='${BOOT_XAUTHORITY}' nohup openclaw gateway run >> ${GATEWAY_LOG} 2>&1 &"
 
     sleep 3
 

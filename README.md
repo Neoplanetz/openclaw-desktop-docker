@@ -97,9 +97,10 @@ The Docker image ships with Node.js 22, OpenClaw, and a minimal `~/.openclaw/ope
 
 1. Starts VNC, NoVNC, and xRDP servers
 2. Ensures the OpenClaw config exists (regenerates if missing)
-3. Writes `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` to `~/.openclaw/.env` (allows Gateway health check over Docker's internal network)
+3. Runs `openclaw-sync-display` to configure DISPLAY / XAUTHORITY targeting (auto-detects VNC vs xRDP session) and writes `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` to `~/.openclaw/.env`
 4. Starts the OpenClaw Gateway in the background (`openclaw gateway run`)
 5. Sets Chrome as the default XFCE web browser
+6. Installs a `.bashrc` hook that auto-syncs the display when switching between VNC and RDP sessions
 
 Since Docker has no systemd, the Gateway daemon install step during onboarding will fail — **this is expected and can be safely ignored**. The entrypoint manages the Gateway process directly.
 
@@ -219,6 +220,10 @@ These are set automatically from `.env` via `docker-compose.yml`:
 | — | `VNC_COL_DEPTH` | `24` | Color depth |
 | — | `TZ` | `Asia/Seoul` | Timezone |
 | — | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS` | `1` | Allows plaintext `ws://` to Docker-internal private IPs ([details](#docker-specific-workarounds)) |
+| `OPENCLAW_BROWSER_ENABLED` | `OPENCLAW_BROWSER_ENABLED` | `false` | Enable OpenClaw CDP browser (Chrome profile: `openclaw`, `--no-sandbox`) |
+| `OPENCLAW_DISPLAY_TARGET` | `OPENCLAW_DISPLAY_TARGET` | `auto` | Display targeting policy: `auto`, `vnc`, `rdp` |
+| — | `OPENCLAW_X_DISPLAY` | — | Hard override for DISPLAY (e.g. `:1`, `:10`) |
+| — | `OPENCLAW_X_AUTHORITY` | — | Hard override for XAUTHORITY path |
 
 ## Data Persistence
 
@@ -246,6 +251,7 @@ This setup includes several workarounds for running a full GUI + browser + OpenC
 | VNC password (`vncpasswd` missing) | 3-tier fallback: `vncpasswd` binary → `openssl` → pure Python DES |
 | Firefox snap broken in Docker | Replaced with Google Chrome deb package |
 | Gateway health check blocks `ws://` to non-loopback | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` permits plaintext `ws://` to RFC 1918 private IPs (Docker internal network only, [added in v2026.2.19](https://github.com/openclaw/openclaw/pull/28670)) |
+| VNC↔RDP display mismatch | `openclaw-sync-display` helper auto-detects active session (VNC `:1` vs xRDP `:10+`), restarts gateway with correct DISPLAY; `.bashrc` hook catches transitions |
 
 ## Troubleshooting
 
@@ -296,6 +302,13 @@ openclaw-desktop-docker/
 │   ├── architecture_*.svg
 │   ├── dockerized_openclaw.png
 │   └── openclaw_desktop_web.png
+├── configs/                    # Config templates (copied at build/runtime)
+│   ├── vnc/xstartup            # VNC session startup
+│   ├── xrdp/startwm.sh        # xRDP session startup
+│   ├── xrdp/reconnectwm.sh    # xRDP reconnection hook
+│   └── ...
+├── scripts/                    # Helper scripts
+│   └── openclaw-sync-display   # Policy-based X11 display targeting
 └── docs/                       # Guides & changelog
     ├── CHANGELOG.md
     ├── DOCKERHUB_OVERVIEW.md
