@@ -174,6 +174,18 @@ openclaw dashboard           # 자동 로그인 토큰으로 대시보드 열기
       allowedOrigins: ["*"],
     },
   },
+  browser: {
+    enabled: false,
+    defaultProfile: "openclaw",
+    noSandbox: true,
+  },
+  plugins: {
+    entries: {
+      browser: {
+        enabled: true,
+      },
+    },
+  },
   agents: {
     defaults: {
       workspace: "~/.openclaw/workspace",
@@ -189,6 +201,9 @@ openclaw dashboard           # 자동 로그인 토큰으로 대시보드 열기
 
 - `bind: "lan"` — 모든 인터페이스에서 수신하여 호스트가 `http://localhost:18789/`에 접근 가능
 - `controlUi.allowedOrigins: ["*"]` — 모든 오리진에서 대시보드 접근 허용 (Docker 내부에서 필요)
+- `browser.enabled: false` — CDP 브라우저는 기본 비활성화; `.env`에서 `OPENCLAW_BROWSER_ENABLED=true`로 활성화
+- `browser.defaultProfile` / `browser.noSandbox` — 전용 `openclaw` Chrome 프로필을 사용하고, Docker 내에서 필요한 샌드박스 비활성화 설정
+- `plugins.entries.browser.enabled: true` — 브라우저 플러그인이 등록되어 브라우저 활성화 시 에이전트가 브라우저 도구 사용 가능
 - 기본적으로 AI 모델은 설정되어 있지 않음 — 온보딩 또는 CLI로 설정하세요
 
 ### 사용자명 & 비밀번호 변경

@@ -174,6 +174,18 @@ openclaw dashboard           # 使用自动登录令牌打开仪表板
       allowedOrigins: ["*"],
     },
   },
+  browser: {
+    enabled: false,
+    defaultProfile: "openclaw",
+    noSandbox: true,
+  },
+  plugins: {
+    entries: {
+      browser: {
+        enabled: true,
+      },
+    },
+  },
   agents: {
     defaults: {
       workspace: "~/.openclaw/workspace",
@@ -189,6 +201,9 @@ openclaw dashboard           # 使用自动登录令牌打开仪表板
 
 - `bind: "lan"` — 监听所有网络接口，使主机可通过 `http://localhost:18789/` 访问
 - `controlUi.allowedOrigins: ["*"]` — 允许任何来源访问仪表板（Docker 内部需要）
+- `browser.enabled: false` — CDP 浏览器默认禁用；在 `.env` 中设置 `OPENCLAW_BROWSER_ENABLED=true` 以启用
+- `browser.defaultProfile` / `browser.noSandbox` — 使用专用的 `openclaw` Chrome 配置文件，并禁用沙盒（Docker 内部需要）
+- `plugins.entries.browser.enabled: true` — 注册浏览器插件，使代理在浏览器启用时可使用浏览器工具
 - 默认未配置 AI 模型 — 通过引导向导或 CLI 设置
 
 ### 自定义用户名和密码

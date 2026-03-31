@@ -174,6 +174,18 @@ Pre-seeded at `~/.openclaw/openclaw.json`:
       allowedOrigins: ["*"],
     },
   },
+  browser: {
+    enabled: false,
+    defaultProfile: "openclaw",
+    noSandbox: true,
+  },
+  plugins: {
+    entries: {
+      browser: {
+        enabled: true,
+      },
+    },
+  },
   agents: {
     defaults: {
       workspace: "~/.openclaw/workspace",
@@ -189,6 +201,9 @@ Pre-seeded at `~/.openclaw/openclaw.json`:
 
 - `bind: "lan"` — listens on all interfaces so the host can access `http://localhost:18789/`
 - `controlUi.allowedOrigins: ["*"]` — allows Dashboard access from any origin (needed inside Docker)
+- `browser.enabled: false` — CDP browser is disabled by default; set `OPENCLAW_BROWSER_ENABLED=true` in `.env` to enable
+- `browser.defaultProfile` / `browser.noSandbox` — uses a dedicated `openclaw` Chrome profile and disables the sandbox (required in Docker)
+- `plugins.entries.browser.enabled: true` — browser plugin is registered so agents can use browser tools when the browser is enabled
 - No AI model is configured by default — set one via onboarding or CLI
 
 ### Custom Username & Password
