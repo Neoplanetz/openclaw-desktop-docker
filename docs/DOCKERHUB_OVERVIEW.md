@@ -8,6 +8,8 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 
 > **Full documentation & Beginner's Guide:** [GitHub Repository](https://github.com/neoplanetz/openclaw-desktop-docker)
 
+> **Support this project:** [Buy Me A Coffee](https://buymeacoffee.com/neoplanetz) | [CTEE (커피 한 잔)](https://ctee.kr/place/neoplanetz)
+
 ## Architecture
 
 ![Architecture](https://raw.githubusercontent.com/neoplanetz/openclaw-desktop-docker/main/assets/architecture_en.svg)
