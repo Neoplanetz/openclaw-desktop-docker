@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.2] - 2026-04-01
+
+### Added
+- `.npmrc` with user-local prefix (`~/.npm-global`) so `npm install -g` works without root inside the container
+- Enables OpenClaw skill installation via `clawhub` and the onboarding wizard without permission errors
+- `.npmrc` included in defaults template (`/opt/openclaw-defaults/`) for volume persistence and dynamic user creation
+- PATH export for `~/.npm-global/bin` in `.bashrc` via entrypoint
+
 ## [1.2.1] - 2026-03-31
 
 ### Added

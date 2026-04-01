@@ -30,7 +30,7 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | **Remote Access** | TigerVNC + NoVNC (web), xRDP (Remote Desktop), raw VNC |
 | **Browser** | Google Chrome (default, `--no-sandbox` wrapper) |
 | **Runtime** | Node.js 22 (NodeSource) |
-| **OpenClaw** | Latest from npm, default config pre-seeded, Gateway auto-starts |
+| **OpenClaw** | Latest from npm, default config pre-seeded, Gateway auto-starts, user-local npm prefix for skill installs |
 | **Desktop Shortcuts** | OpenClaw Setup, Dashboard, Terminal |
 
 ## Ports
@@ -101,6 +101,7 @@ The Docker image ships with Node.js 22, OpenClaw, and a minimal `~/.openclaw/ope
 4. Starts the OpenClaw Gateway in the background (`openclaw gateway run`)
 5. Sets Chrome as the default XFCE web browser
 6. Installs a `.bashrc` hook that auto-syncs the display when switching between VNC and RDP sessions
+7. Ensures `.npmrc` with user-local prefix (`~/.npm-global`) exists so `npm install -g` works without root (for clawhub and skill dependencies)
 
 Since Docker has no systemd, the Gateway daemon install step during onboarding will fail — **this is expected and can be safely ignored**. The entrypoint manages the Gateway process directly.
 
@@ -246,6 +247,7 @@ These are set automatically from `.env` via `docker-compose.yml`:
 The `openclaw-home` named volume mounts to the configured user's home directory (`/home/claw` by default). This preserves:
 
 - OpenClaw config, credentials, and conversation history
+- Globally installed npm packages (`~/.npm-global/`) including clawhub and skills
 - Chrome profile and bookmarks
 - Desktop customizations
 - SSH keys, shell history, etc.
@@ -268,6 +270,7 @@ This setup includes several workarounds for running a full GUI + browser + OpenC
 | Firefox snap broken in Docker | Replaced with Google Chrome deb package |
 | Gateway health check blocks `ws://` to non-loopback | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` permits plaintext `ws://` to RFC 1918 private IPs (Docker internal network only, [added in v2026.2.19](https://github.com/openclaw/openclaw/pull/28670)) |
 | VNC↔RDP display mismatch | `openclaw-sync-display` helper auto-detects active session (VNC `:1` vs xRDP `:10+`), restarts gateway with correct DISPLAY; `.bashrc` hook catches transitions |
+| `npm install -g` needs root | `.npmrc` sets `prefix=~/.npm-global` so global installs go to user-writable directory; PATH exported in `.bashrc` |
 
 ## Troubleshooting
 

@@ -23,7 +23,7 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | **Remote Access** | TigerVNC + NoVNC (web), xRDP (Remote Desktop), raw VNC |
 | **Browser** | Google Chrome |
 | **Runtime** | Node.js 22 |
-| **OpenClaw** | Latest from npm, Gateway auto-starts on boot |
+| **OpenClaw** | Latest from npm, Gateway auto-starts on boot, user-local npm prefix for skill installs |
 | **Desktop Shortcuts** | OpenClaw Setup, Dashboard, Terminal |
 
 ## Ports

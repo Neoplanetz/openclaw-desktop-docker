@@ -30,7 +30,7 @@
 | **远程访问** | TigerVNC + NoVNC（Web）、xRDP（远程桌面）、VNC |
 | **浏览器** | Google Chrome（默认，`--no-sandbox` 包装器） |
 | **运行时** | Node.js 22（NodeSource） |
-| **OpenClaw** | npm 最新版，默认配置已预置，Gateway 自动启动 |
+| **OpenClaw** | npm 最新版，默认配置已预置，Gateway 自动启动，用户本地 npm prefix 用于技能安装 |
 | **桌面快捷方式** | OpenClaw 设置、仪表板、终端 |
 
 ## 端口
@@ -101,6 +101,7 @@ Docker 镜像已包含 Node.js 22、OpenClaw 及最小化的 `~/.openclaw/opencl
 4. 在后台启动 OpenClaw Gateway（`openclaw gateway run`）
 5. 将 Chrome 设为 XFCE 默认浏览器
 6. 安装 `.bashrc` 钩子，在 VNC 和 RDP 会话切换时自动同步显示
+7. 确保存在用户本地 prefix（`~/.npm-global`）的 `.npmrc`，使 `npm install -g` 无需 root 即可运行（用于 clawhub 和技能依赖安装）
 
 由于 Docker 没有 systemd，引导过程中的 Gateway 守护进程安装步骤会失败 — **这是正常的，可以安全忽略**。入口脚本直接管理 Gateway 进程。
 
@@ -246,6 +247,7 @@ docker compose up -d --build
 `openclaw-home` 命名卷挂载到配置用户的主目录（默认：`/home/claw`）。以下内容会被保留：
 
 - OpenClaw 配置、凭据和对话记录
+- 全局安装的 npm 包（`~/.npm-global/`）— 包括 clawhub 和技能
 - Chrome 配置文件和书签
 - 桌面自定义设置
 - SSH 密钥、Shell 历史记录等
@@ -268,6 +270,7 @@ docker compose up -d --build
 | Docker 中 Firefox snap 无法使用 | 替换为 Google Chrome deb 包 |
 | Gateway 健康检查阻止非回环 `ws://` | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` 允许对 RFC 1918 私有 IP 使用明文 `ws://`（仅限 Docker 内部网络，[v2026.2.19 中添加](https://github.com/openclaw/openclaw/pull/28670)） |
 | VNC↔RDP 显示不匹配 | `openclaw-sync-display` 助手自动检测活动会话（VNC `:1` vs xRDP `:10+`），使用正确的 DISPLAY 重启 Gateway；`.bashrc` 钩子捕获切换 |
+| `npm install -g` 需要 root | `.npmrc` 设置 `prefix=~/.npm-global`，使全局安装写入用户可写目录；`.bashrc` 中导出 PATH |
 
 ## 故障排除
 

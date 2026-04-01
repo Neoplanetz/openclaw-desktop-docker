@@ -213,6 +213,28 @@ fi
 BASHRC_EOF
 fi
 
+# ── npm global prefix (user-writable, no sudo needed) ────────────────
+# Uses .npmrc so it applies to ALL processes (not just interactive shells)
+NPMRC="/home/${USER}/.npmrc"
+if [ ! -f "${NPMRC}" ] || ! grep -q "prefix=" "${NPMRC}" 2>/dev/null; then
+    echo "prefix=/home/${USER}/.npm-global" > "${NPMRC}"
+    chown "${USER}:${USER}" "${NPMRC}"
+fi
+
+# Ensure npm-global directory exists (volume may be empty on first run)
+mkdir -p "/home/${USER}/.npm-global"
+chown "${USER}:${USER}" "/home/${USER}/.npm-global"
+
+# Add npm-global/bin to PATH for interactive shells
+NPM_MARKER="# npm-global-prefix"
+if ! grep -q "${NPM_MARKER}" "${BASHRC}" 2>/dev/null; then
+    cat >> "${BASHRC}" << 'BASHRC_NPM_EOF'
+
+# npm-global-prefix
+export PATH="${HOME}/.npm-global/bin:${PATH}"
+BASHRC_NPM_EOF
+fi
+
 # ── Desktop shortcuts (regenerate if missing from volume) ────────────
 DESKTOP_DIR="/home/${USER}/Desktop"
 mkdir -p "${DESKTOP_DIR}"

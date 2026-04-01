@@ -30,7 +30,7 @@ Node.js 22、OpenClaw、Google Chrome、デフォルトのGateway設定がすべ
 | **リモートアクセス** | TigerVNC + NoVNC（Web）、xRDP（リモートデスクトップ）、VNC |
 | **ブラウザ** | Google Chrome（デフォルト、`--no-sandbox`ラッパー） |
 | **ランタイム** | Node.js 22（NodeSource） |
-| **OpenClaw** | npmの最新版、デフォルト設定済み、Gateway自動起動 |
+| **OpenClaw** | npmの最新版、デフォルト設定済み、Gateway自動起動、スキルインストール用ユーザーローカルnpm prefix |
 | **デスクトップショートカット** | OpenClawセットアップ、ダッシュボード、ターミナル |
 
 ## ポート
@@ -101,6 +101,7 @@ Dockerイメージには、Node.js 22、OpenClaw、および最小限の`~/.open
 4. バックグラウンドでOpenClaw Gatewayを起動（`openclaw gateway run`）
 5. ChromeをXFCEのデフォルトWebブラウザに設定
 6. VNC ↔ RDPセッション切替時にディスプレイを自動同期する`.bashrc`フックをインストール
+7. ユーザーローカルprefix（`~/.npm-global`）の`.npmrc`が存在することを確認 — `npm install -g`がroot不要で動作（clawhubおよびスキル依存関係のインストール用）
 
 Dockerにはsystemdがないため、オンボーディング中のGatewayデーモンインストールステップは失敗します — **これは想定通りであり、安全に無視できます**。エントリポイントがGatewayプロセスを直接管理します。
 
@@ -246,6 +247,7 @@ docker compose up -d --build
 `openclaw-home`名前付きボリュームが設定されたユーザーのホームディレクトリにマウントされます（デフォルト：`/home/claw`）。以下が保持されます：
 
 - OpenClaw設定、認証情報、会話履歴
+- グローバルインストールされたnpmパッケージ（`~/.npm-global/`）— clawhubおよびスキルを含む
 - Chromeプロファイルとブックマーク
 - デスクトップのカスタマイズ
 - SSHキー、シェル履歴など
@@ -268,6 +270,7 @@ docker compose up -d --build
 | DockerでFirefox snapが動作しない | Google Chrome debパッケージに置き換え |
 | Gatewayヘルスチェックが非ループバック`ws://`をブロック | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`でRFC 1918プライベートIPへのプレーンテキスト`ws://`を許可（Docker内部ネットワークのみ、[v2026.2.19で追加](https://github.com/openclaw/openclaw/pull/28670)） |
 | VNC↔RDPディスプレイ不一致 | `openclaw-sync-display`ヘルパーがアクティブセッションを自動検出（VNC `:1` vs xRDP `:10+`）、正しいDISPLAYでGatewayを再起動；`.bashrc`フックで切替を検知 |
+| `npm install -g`にrootが必要 | `.npmrc`で`prefix=~/.npm-global`を設定し、グローバルインストールをユーザー書き込み可能なディレクトリに変更；`.bashrc`でPATHをエクスポート |
 
 ## トラブルシューティング
 
