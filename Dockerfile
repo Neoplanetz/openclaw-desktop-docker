@@ -123,7 +123,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 # ── OpenClaw (baked into image, onboard on first run) ──
 ARG OPENCLAW_VERSION=latest
 RUN npm install -g openclaw@${OPENCLAW_VERSION} \
-    && echo "OpenClaw $(openclaw --version 2>/dev/null || echo 'installed')"
+    && OC_VER=$(npm list -g openclaw --depth=0 2>/dev/null | grep -oP 'openclaw@\K[^\s]+' || echo 'unknown') \
+    && echo "${OC_VER}" > /etc/openclaw-version \
+    && echo "OpenClaw ${OC_VER} installed"
 
 # ── Verify vncpasswd is available ────────────────────────
 RUN which vncpasswd || (which tigervncpasswd && ln -sf $(which tigervncpasswd) /usr/local/bin/vncpasswd) \

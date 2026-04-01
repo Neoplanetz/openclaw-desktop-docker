@@ -8,7 +8,7 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 
 > **Full documentation & Beginner's Guide:** [GitHub Repository](https://github.com/neoplanetz/openclaw-desktop-docker)
 
-> **Support this project:** [Buy Me A Coffee](https://buymeacoffee.com/neoplanetz) | [CTEE (커피 한 잔)](https://ctee.kr/place/neoplanetz)
+> **Support this project:** [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/neoplanetz) [![CTEE](https://img.shields.io/badge/CTEE-커피%20한%20잔-FF5722?style=for-the-badge)](https://ctee.kr/place/neoplanetz)
 
 ## Architecture
 
@@ -25,6 +25,14 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | **Runtime** | Node.js 22 |
 | **OpenClaw** | Latest from npm, Gateway auto-starts on boot, user-local npm prefix for skill installs |
 | **Desktop Shortcuts** | OpenClaw Setup, Dashboard, Terminal |
+
+## Bundled Versions
+
+| Package | Version |
+|---------|---------|
+| **OpenClaw** | `2026.3.31` |
+| **Node.js** | `v22.22.2` |
+| **Google Chrome** | `146.0.7680.177` |
 
 ## Ports
 
