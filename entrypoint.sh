@@ -215,11 +215,11 @@ fi
 
 # ── npm global prefix (user-writable, no sudo needed) ────────────────
 # Uses .npmrc so it applies to ALL processes (not just interactive shells)
+# Always rewrite prefix to match current user's home (handles custom CLAW_USER)
 NPMRC="/home/${USER}/.npmrc"
-if [ ! -f "${NPMRC}" ] || ! grep -q "prefix=" "${NPMRC}" 2>/dev/null; then
-    echo "prefix=/home/${USER}/.npm-global" > "${NPMRC}"
-    chown "${USER}:${USER}" "${NPMRC}"
-fi
+NPM_GLOBAL_DIR="/home/${USER}/.npm-global"
+echo "prefix=${NPM_GLOBAL_DIR}" > "${NPMRC}"
+chown "${USER}:${USER}" "${NPMRC}"
 
 # Ensure npm-global directory exists (volume may be empty on first run)
 mkdir -p "/home/${USER}/.npm-global"
