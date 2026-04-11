@@ -1,7 +1,4 @@
 # ============================================================
-# OpenClaw Docker Environment
-# Ubuntu 24.04 + XFCE4 + NoVNC + xRDP
-# ============================================================
 FROM ubuntu:24.04
 
 LABEL maintainer="openclaw-docker"
@@ -77,33 +74,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ── Google Chrome (deb package) ────────────────────────────
-# Chrome has many deps, install without --no-install-recommends
-RUN wget -q -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+# ── Chromium (Multi-arch arm64/amd64) ──────────────────────
+RUN add-apt-repository ppa:xtradeb/apps -y \
     && apt-get update \
-    && apt-get install -y /tmp/google-chrome.deb \
-    || (apt-get -f install -y && apt-get install -y /tmp/google-chrome.deb) \
-    && rm -f /tmp/google-chrome.deb \
+    && apt-get install -y chromium \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Chrome always needs --no-sandbox inside Docker
-# Wrap original binary + clean stale lock files
-RUN mv /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable-real
+# Wrap original binary to add --no-sandbox
+RUN mv /usr/bin/chromium /usr/bin/chromium-real \
+    && printf '#!/bin/bash\nexec /usr/bin/chromium-real --no-sandbox "$@"\n' > /usr/bin/chromium \
+    && chmod +x /usr/bin/chromium \
+    && ln -s /usr/bin/chromium /usr/bin/google-chrome-stable \
+    && ln -s /usr/bin/chromium /usr/bin/google-chrome
 
-RUN printf '#!/bin/bash\nexec /usr/bin/google-chrome-stable-real --no-sandbox "$@"\n' \
-    > /usr/bin/google-chrome-stable \
-    && chmod +x /usr/bin/google-chrome-stable \
-    && rm -f /usr/bin/google-chrome 2>/dev/null; \
-       cp /usr/bin/google-chrome-stable /usr/bin/google-chrome
+# ── Set Chromium as default browser ─────────────────────────
+RUN update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/bin/chromium 200 \
+    && update-alternatives --set x-www-browser /usr/bin/chromium \
+    && update-alternatives --install /usr/bin/gnome-www-browser gnome-www-browser /usr/bin/chromium 200 \
+    && update-alternatives --set gnome-www-browser /usr/bin/chromium
 
-# ── Set Chrome as default browser ─────────────────────────
-RUN update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/bin/google-chrome-stable 200 \
-    && update-alternatives --set x-www-browser /usr/bin/google-chrome-stable \
-    && update-alternatives --install /usr/bin/gnome-www-browser gnome-www-browser /usr/bin/google-chrome-stable 200 \
-    && update-alternatives --set gnome-www-browser /usr/bin/google-chrome-stable
-
-# ── xdg-open wrapper (Docker internal IP → localhost) ────
-# Onboard opens browser with 172.x.x.x which fails secure context
 # Wrapper rewrites Docker internal IPs to localhost
 RUN mv /usr/bin/xdg-open /usr/bin/xdg-open-real 2>/dev/null || true
 
@@ -137,8 +126,6 @@ RUN useradd -m -s /bin/bash ${USER} \
     && adduser ${USER} sudo \
     && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/${USER}
 
-# ── npm global prefix (user-writable, no sudo needed) ─────
-# Allows `npm install -g` without root (used by clawhub / OpenClaw skills)
 # Uses .npmrc so it applies to ALL processes (not just interactive shells)
 RUN mkdir -p /home/${USER}/.npm-global \
     && echo "prefix=/home/${USER}/.npm-global" > /home/${USER}/.npmrc \
@@ -160,7 +147,6 @@ COPY configs/desktop/*.desktop /home/${USER}/Desktop/
 RUN chmod +x /home/${USER}/Desktop/*.desktop \
     && chown -R ${USER}:${USER} /home/${USER}/Desktop
 
-# ── Desktop wallpaper ─────────────────────────────────
 # 1) Replace default XFCE background (system path, unaffected by volume mounts)
 COPY assets/dockerized_openclaw.png /usr/share/backgrounds/xfce/xfce-teal.jpg
 COPY assets/dockerized_openclaw.png /usr/share/backgrounds/dockerized_openclaw.png
@@ -176,8 +162,6 @@ RUN sed -i 's/^#xserverbpp=24/xserverbpp=24/' /etc/xrdp/xrdp.ini \
     && echo "xfce4-session" > /home/${USER}/.xsession \
     && chown ${USER}:${USER} /home/${USER}/.xsession
 
-# ── Save user config templates (for dynamic user creation at runtime) ──
-# /opt/openclaw-defaults/  — user home template (copied to new users)
 # /opt/openclaw-configs/   — read-only config templates (entrypoint regeneration)
 RUN mkdir -p /opt/openclaw-defaults \
     && cp -a /home/${USER}/.vnc /opt/openclaw-defaults/ \
@@ -204,10 +188,6 @@ RUN chmod +x /usr/local/bin/openclaw-sync-display
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# ── Expose ports ─────────────────────────────────────────────
-# 6080: NoVNC (web browser)
-# 5901: VNC direct connection
-# 3389: RDP
 # 8080: OpenClaw Gateway
 EXPOSE 6080 5901 3389 18789
 
