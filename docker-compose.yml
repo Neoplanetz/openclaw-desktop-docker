@@ -34,7 +34,7 @@ services:
       - "6080:6080"   # NoVNC  -> http://localhost:6080/vnc.html
       - "5901:5901"   # VNC    -> VNC client
       - "3389:3389"   # RDP    -> Remote desktop
-      - "18789:18789" # OpenClaw Gateway / Dashboard
+      - "18790:18789" # OpenClaw Gateway / Dashboard
 
     # ── Volumes (data persistence) ──
     volumes:
