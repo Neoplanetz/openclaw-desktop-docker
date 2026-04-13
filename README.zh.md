@@ -101,7 +101,7 @@ Docker 镜像已包含 Node.js 22、OpenClaw 及最小化的 `~/.openclaw/opencl
 4. 在后台启动 OpenClaw Gateway（`openclaw gateway run`）
 5. 将 Chrome 设为 XFCE 默认浏览器
 6. 安装 `.bashrc` 钩子，在 VNC 和 RDP 会话切换时自动同步显示
-7. 确保存在用户本地 prefix（`~/.npm-global`）的 `.npmrc`，使 `npm install -g` 无需 root 即可运行（用于 clawhub 和技能依赖安装）
+7. 确保存在用户可写 prefix（`/var/openclaw-npm`）的 `.npmrc`，使 `npm install -g` 无需 root 即可运行（用于 clawhub 和技能依赖安装）。prefix 位于 `/home` 之外，因此容器重建时已安装的技能会被重置，避免用户安装的旧版 openclaw 遮蔽镜像内置版本。
 
 由于 Docker 没有 systemd，引导过程中的 Gateway 守护进程安装步骤会失败 — **这是正常的，可以安全忽略**。入口脚本直接管理 Gateway 进程。
 
@@ -247,12 +247,13 @@ docker compose up -d --build
 `openclaw-home` 命名卷挂载到配置用户的主目录（默认：`/home/claw`）。以下内容会被保留：
 
 - OpenClaw 配置、凭据和对话记录
-- 全局安装的 npm 包（`~/.npm-global/`）— 包括 clawhub 和技能
 - Chrome 配置文件和书签
 - 桌面自定义设置
 - SSH 密钥、Shell 历史记录等
 
 数据在 `docker compose down` / `up` 后仍然保留。只有 `docker volume rm openclaw-home` 才会删除数据。
+
+> **不会持久化**：npm 全局 prefix 位于主目录卷之外的 `/var/openclaw-npm`，因此通过 `clawhub` 或 `npm install -g` 安装的包会在容器重建时重置。这是有意为之，可避免升级时用户安装的旧版 `openclaw` 遮蔽镜像内置版本。重建后请重新安装技能。
 
 ## Docker 相关解决方案
 
@@ -270,7 +271,7 @@ docker compose up -d --build
 | Docker 中 Firefox snap 无法使用 | 替换为 Google Chrome deb 包 |
 | Gateway 健康检查阻止非回环 `ws://` | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` 允许对 RFC 1918 私有 IP 使用明文 `ws://`（仅限 Docker 内部网络，[v2026.2.19 中添加](https://github.com/openclaw/openclaw/pull/28670)） |
 | VNC↔RDP 显示不匹配 | `openclaw-sync-display` 助手自动检测活动会话（VNC `:1` vs xRDP `:10+`），使用正确的 DISPLAY 重启 Gateway；`.bashrc` 钩子捕获切换 |
-| `npm install -g` 需要 root | `.npmrc` 设置 `prefix=~/.npm-global`，使全局安装写入用户可写目录；`.bashrc` 中导出 PATH |
+| `npm install -g` 需要 root | `.npmrc` 设置 `prefix=/var/openclaw-npm`（位于 `/home` 之外），使全局安装写入用户可写目录并在重建时重置；`.bashrc` 中导出 PATH |
 
 ## 故障排除
 

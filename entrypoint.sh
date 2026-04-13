@@ -213,25 +213,30 @@ fi
 BASHRC_EOF
 fi
 
-# ── npm global prefix (user-writable, no sudo needed) ────────────────
-# Uses .npmrc so it applies to ALL processes (not just interactive shells)
-# Always rewrite prefix to match current user's home (handles custom CLAW_USER)
+# ── npm global prefix (user-writable, OUTSIDE home) ──────────────────
+# Lives at /var/openclaw-npm so the home volume doesn't persist installed
+# packages — that would shadow the image-baked openclaw on version upgrade.
+# Trade-off: clawhub-installed skills are reset on container recreate.
 NPMRC="/home/${USER}/.npmrc"
-NPM_GLOBAL_DIR="/home/${USER}/.npm-global"
+NPM_GLOBAL_DIR="/var/openclaw-npm"
 echo "prefix=${NPM_GLOBAL_DIR}" > "${NPMRC}"
 chown "${USER}:${USER}" "${NPMRC}"
 
-# Ensure npm-global directory exists (volume may be empty on first run)
-mkdir -p "/home/${USER}/.npm-global"
-chown "${USER}:${USER}" "/home/${USER}/.npm-global"
+mkdir -p "${NPM_GLOBAL_DIR}"
+chown -R "${USER}:${USER}" "${NPM_GLOBAL_DIR}"
 
-# Add npm-global/bin to PATH for interactive shells
-NPM_MARKER="# npm-global-prefix"
+# Migration: drop legacy ~/.npm-global PATH block written by older images
+if grep -q '^# npm-global-prefix$' "${BASHRC}" 2>/dev/null; then
+    sed -i '/^# npm-global-prefix$/,+1d' "${BASHRC}"
+fi
+
+# Add /var/openclaw-npm/bin to PATH for interactive shells
+NPM_MARKER="# openclaw-npm-prefix"
 if ! grep -q "${NPM_MARKER}" "${BASHRC}" 2>/dev/null; then
     cat >> "${BASHRC}" << 'BASHRC_NPM_EOF'
 
-# npm-global-prefix
-export PATH="${HOME}/.npm-global/bin:${PATH}"
+# openclaw-npm-prefix
+export PATH="/var/openclaw-npm/bin:${PATH}"
 BASHRC_NPM_EOF
 fi
 

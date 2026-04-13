@@ -101,7 +101,7 @@ Docker 이미지에 Node.js 22, OpenClaw, 최소 `~/.openclaw/openclaw.json` 설
 4. 백그라운드에서 OpenClaw Gateway 시작 (`openclaw gateway run`)
 5. Chrome을 XFCE 기본 웹 브라우저로 설정
 6. VNC ↔ RDP 세션 전환 시 디스플레이를 자동 동기화하는 `.bashrc` 훅 설치
-7. 사용자 로컬 prefix(`~/.npm-global`)가 설정된 `.npmrc` 존재 확인 — `npm install -g`가 root 없이 작동 (clawhub 및 스킬 의존성 설치용)
+7. 사용자 쓰기 가능 prefix(`/var/openclaw-npm`)가 설정된 `.npmrc` 존재 확인 — `npm install -g`가 root 없이 작동 (clawhub 및 스킬 의존성 설치용). prefix가 `/home` 외부에 있어 컨테이너 재생성 시 설치된 스킬이 초기화되며, 이미지에 baked된 openclaw 버전이 사용자가 설치한 구버전에 가려지는 문제를 방지합니다.
 
 Docker에는 systemd가 없으므로, 온보딩 중 Gateway 데몬 설치 단계는 실패합니다 — **이는 정상이며 무시해도 됩니다**. 엔트리포인트가 Gateway 프로세스를 직접 관리합니다.
 
@@ -247,12 +247,13 @@ docker compose up -d --build
 `openclaw-home` 네임드 볼륨이 설정된 사용자의 홈 디렉토리에 마운트됩니다 (기본값: `/home/claw`). 다음이 보존됩니다:
 
 - OpenClaw 설정, 인증 정보, 대화 기록
-- 글로벌 설치된 npm 패키지 (`~/.npm-global/`) — clawhub 및 스킬 포함
 - Chrome 프로필 및 북마크
 - 데스크톱 사용자 지정
 - SSH 키, 셸 히스토리 등
 
 `docker compose down` / `up` 후에도 데이터가 유지됩니다. `docker volume rm openclaw-home`만이 데이터를 삭제합니다.
+
+> **영속되지 않음**: npm 글로벌 prefix는 홈 볼륨 외부의 `/var/openclaw-npm`에 있으므로, `clawhub` 또는 `npm install -g`로 설치한 패키지는 컨테이너 재생성 시 초기화됩니다. 이는 의도된 동작으로, 업그레이드 시 사용자가 설치한 구버전 `openclaw`가 이미지에 baked된 버전을 가리는 문제를 방지합니다. 재생성 후 스킬을 다시 설치하세요.
 
 ## Docker 관련 우회 방법
 
@@ -270,7 +271,7 @@ docker compose up -d --build
 | Docker에서 Firefox snap 미작동 | Google Chrome deb 패키지로 대체 |
 | Gateway health check가 non-loopback `ws://` 차단 | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`로 RFC 1918 사설 IP에 대한 plaintext `ws://` 허용 (Docker 내부 네트워크만 해당, [v2026.2.19에서 추가](https://github.com/openclaw/openclaw/pull/28670)) |
 | VNC↔RDP 디스플레이 불일치 | `openclaw-sync-display` 헬퍼가 활성 세션을 자동 감지 (VNC `:1` vs xRDP `:10+`), 올바른 DISPLAY로 Gateway 재시작; `.bashrc` 훅으로 전환 감지 |
-| `npm install -g`에 root 필요 | `.npmrc`에 `prefix=~/.npm-global` 설정으로 글로벌 설치가 사용자 쓰기 가능 디렉토리로 이동; `.bashrc`에서 PATH 내보내기 |
+| `npm install -g`에 root 필요 | `.npmrc`에 `prefix=/var/openclaw-npm` 설정 (`/home` 외부) — 글로벌 설치가 사용자 쓰기 가능 디렉토리로 이동하고 재생성 시 초기화됨; `.bashrc`에서 PATH 내보내기 |
 
 ## 문제 해결
 

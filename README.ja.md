@@ -101,7 +101,7 @@ Dockerイメージには、Node.js 22、OpenClaw、および最小限の`~/.open
 4. バックグラウンドでOpenClaw Gatewayを起動（`openclaw gateway run`）
 5. ChromeをXFCEのデフォルトWebブラウザに設定
 6. VNC ↔ RDPセッション切替時にディスプレイを自動同期する`.bashrc`フックをインストール
-7. ユーザーローカルprefix（`~/.npm-global`）の`.npmrc`が存在することを確認 — `npm install -g`がroot不要で動作（clawhubおよびスキル依存関係のインストール用）
+7. ユーザー書き込み可能prefix（`/var/openclaw-npm`）の`.npmrc`が存在することを確認 — `npm install -g`がroot不要で動作（clawhubおよびスキル依存関係のインストール用）。prefixが`/home`の外にあるため、コンテナ再作成時にインストール済みスキルはリセットされ、ユーザーがインストールした古い openclaw がイメージに焼き込まれた版を覆い隠す問題を防ぎます。
 
 Dockerにはsystemdがないため、オンボーディング中のGatewayデーモンインストールステップは失敗します — **これは想定通りであり、安全に無視できます**。エントリポイントがGatewayプロセスを直接管理します。
 
@@ -247,12 +247,13 @@ docker compose up -d --build
 `openclaw-home`名前付きボリュームが設定されたユーザーのホームディレクトリにマウントされます（デフォルト：`/home/claw`）。以下が保持されます：
 
 - OpenClaw設定、認証情報、会話履歴
-- グローバルインストールされたnpmパッケージ（`~/.npm-global/`）— clawhubおよびスキルを含む
 - Chromeプロファイルとブックマーク
 - デスクトップのカスタマイズ
 - SSHキー、シェル履歴など
 
 `docker compose down` / `up`後もデータは保持されます。`docker volume rm openclaw-home`のみがデータを削除します。
+
+> **永続化されない**: npmグローバルprefixはホームボリュームの外（`/var/openclaw-npm`）にあるため、`clawhub`または`npm install -g`でインストールしたパッケージはコンテナ再作成時にリセットされます。これは意図的な動作で、アップグレード時にユーザーがインストールした古い`openclaw`がイメージに焼き込まれた版を覆い隠すのを防ぎます。再作成後はスキルを再インストールしてください。
 
 ## Docker固有の回避策
 
@@ -270,7 +271,7 @@ docker compose up -d --build
 | DockerでFirefox snapが動作しない | Google Chrome debパッケージに置き換え |
 | Gatewayヘルスチェックが非ループバック`ws://`をブロック | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`でRFC 1918プライベートIPへのプレーンテキスト`ws://`を許可（Docker内部ネットワークのみ、[v2026.2.19で追加](https://github.com/openclaw/openclaw/pull/28670)） |
 | VNC↔RDPディスプレイ不一致 | `openclaw-sync-display`ヘルパーがアクティブセッションを自動検出（VNC `:1` vs xRDP `:10+`）、正しいDISPLAYでGatewayを再起動；`.bashrc`フックで切替を検知 |
-| `npm install -g`にrootが必要 | `.npmrc`で`prefix=~/.npm-global`を設定し、グローバルインストールをユーザー書き込み可能なディレクトリに変更；`.bashrc`でPATHをエクスポート |
+| `npm install -g`にrootが必要 | `.npmrc`で`prefix=/var/openclaw-npm`（`/home`の外）を設定 — グローバルインストールがユーザー書き込み可能ディレクトリに移動し、再作成時にリセット；`.bashrc`でPATHをエクスポート |
 
 ## トラブルシューティング
 

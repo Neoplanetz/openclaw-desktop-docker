@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.3] - 2026-04-13
+
+### Changed
+- Move npm global prefix from `~/.npm-global` to `/var/openclaw-npm` (outside the home volume)
+  - Prevents stale user-installed `openclaw` from shadowing the image-baked version on upgrade
+  - Eliminates version conflicts when switching `OPENCLAW_VERSION` or pulling a new image
+  - Trade-off: clawhub-installed skills are now reset on container recreate (reinstall after upgrade)
+- Entrypoint migrates legacy `# npm-global-prefix` block in `.bashrc` to the new `# openclaw-npm-prefix` block automatically
+
 ## [1.2.2] - 2026-04-01
 
 ### Added

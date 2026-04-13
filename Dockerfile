@@ -137,12 +137,14 @@ RUN useradd -m -s /bin/bash ${USER} \
     && adduser ${USER} sudo \
     && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/${USER}
 
-# ── npm global prefix (user-writable, no sudo needed) ─────
-# Allows `npm install -g` without root (used by clawhub / OpenClaw skills)
-# Uses .npmrc so it applies to ALL processes (not just interactive shells)
-RUN mkdir -p /home/${USER}/.npm-global \
-    && echo "prefix=/home/${USER}/.npm-global" > /home/${USER}/.npmrc \
-    && chown -R ${USER}:${USER} /home/${USER}/.npm-global /home/${USER}/.npmrc
+# ── npm global prefix (user-writable, OUTSIDE home) ──────
+# Lives at /var/openclaw-npm so the home volume doesn't persist installed
+# packages across container recreates. Without this, a stale openclaw in
+# ~/.npm-global would shadow the image-baked version on upgrade.
+RUN mkdir -p /var/openclaw-npm \
+    && echo "prefix=/var/openclaw-npm" > /home/${USER}/.npmrc \
+    && chown -R ${USER}:${USER} /var/openclaw-npm \
+    && chown ${USER}:${USER} /home/${USER}/.npmrc
 
 # ── OpenClaw default config (model excluded — set via Dashboard) ───
 RUN mkdir -p /home/${USER}/.openclaw/workspace
@@ -182,7 +184,6 @@ RUN sed -i 's/^#xserverbpp=24/xserverbpp=24/' /etc/xrdp/xrdp.ini \
 RUN mkdir -p /opt/openclaw-defaults \
     && cp -a /home/${USER}/.vnc /opt/openclaw-defaults/ \
     && cp -a /home/${USER}/.openclaw /opt/openclaw-defaults/ \
-    && cp -a /home/${USER}/.npm-global /opt/openclaw-defaults/ \
     && cp -a /home/${USER}/.npmrc /opt/openclaw-defaults/ \
     && cp -a /home/${USER}/Desktop /opt/openclaw-defaults/ \
     && cp -a /home/${USER}/.xsession /opt/openclaw-defaults/
