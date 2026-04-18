@@ -1,0 +1,32 @@
+# Docker build context exclusions.
+# Anything not COPY'd into the image should be excluded to keep the
+# build context small and prevent unrelated changes from busting cache.
+
+# Version control
+.git
+.gitignore
+.github
+
+# Documentation (not used by the image build)
+README*.md
+TODO.md
+docs/
+
+# Editor / OS metadata
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Node (in case clawhub or local tooling lands here)
+node_modules/
+npm-debug.log*
+
+# Local environment overrides
+.env.local
+*.local
+
+# Claude / agent harness state (machine-specific)
+.claude/

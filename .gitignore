@@ -1,0 +1,18 @@
+# Editor / OS metadata
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local environment overrides (never commit secrets)
+.env.local
+*.local
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Claude / agent harness state
+.claude/
