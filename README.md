@@ -15,6 +15,10 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 
 > **New to Docker?** Check out the [Beginner's Guide](docs/GUIDE_FOR_BEGINNERS.md) for step-by-step instructions with screenshots.
 
+> ⚠️ **Security notice**
+> The default password (`claw1234`) is published in this README. By default, ports are bound to `127.0.0.1` only (this host) — safe for local use.
+> Before exposing to your LAN or the internet, **always change `CLAW_PASSWORD` in `.env`** and review the port-mapping block in `docker-compose.yml`.
+
 ## Architecture
 
 <p align="center">
@@ -54,13 +58,16 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 docker compose up -d
 ```
 
-Or standalone:
+Or standalone (loopback-only — safe default):
 ```bash
 docker pull neoplanetz/openclaw-desktop-docker:latest
 docker run -d --name openclaw-desktop \
-  -p 6080:6080 -p 5901:5901 -p 3389:3389 -p 18789:18789 \
+  -p 127.0.0.1:6080:6080 -p 127.0.0.1:5901:5901 \
+  -p 127.0.0.1:3389:3389 -p 127.0.0.1:18789:18789 \
   --shm-size=2g --security-opt seccomp=unconfined \
   neoplanetz/openclaw-desktop-docker:latest
+# To expose on the LAN, first set -e PASSWORD=<strong>, then drop the
+# 127.0.0.1: prefix from the -p flags above.
 ```
 
 ### Build from Source

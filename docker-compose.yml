@@ -30,11 +30,21 @@ services:
       # - OPENCLAW_X_AUTHORITY=      # Hard override for Xauthority path
 
     # ── Port mapping ──
+    # Default: bind to 127.0.0.1 only — accessible from this host, not the LAN.
+    # The default password (claw1234) is public, so LAN exposure with the
+    # default password is unsafe. To expose on the LAN, FIRST change
+    # CLAW_PASSWORD in .env, THEN swap the active block below for the
+    # commented "LAN exposure" block.
     ports:
-      - "6080:6080"   # NoVNC  -> http://localhost:6080/vnc.html
-      - "5901:5901"   # VNC    -> VNC client
-      - "3389:3389"   # RDP    -> Remote desktop
-      - "18789:18789" # OpenClaw Gateway / Dashboard
+      - "127.0.0.1:6080:6080"   # NoVNC  -> http://localhost:6080/vnc.html
+      - "127.0.0.1:5901:5901"   # VNC    -> VNC client
+      - "127.0.0.1:3389:3389"   # RDP    -> Remote desktop
+      - "127.0.0.1:18789:18789" # OpenClaw Gateway / Dashboard
+      # ── LAN exposure (uncomment AFTER changing the default password) ──
+      # - "6080:6080"
+      # - "5901:5901"
+      # - "3389:3389"
+      # - "18789:18789"
 
     # ── Volumes (data persistence) ──
     volumes:

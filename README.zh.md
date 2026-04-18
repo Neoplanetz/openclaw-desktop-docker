@@ -15,6 +15,10 @@
 
 > **第一次使用 Docker？** 请查看[完全新手指南](docs/GUIDE_FOR_BEGINNERS.zh.md)，包含截图的分步说明。
 
+> ⚠️ **安全提示**
+> 默认密码（`claw1234`）在本 README 中公开。默认情况下端口仅绑定到 `127.0.0.1`，仅可从本机访问 — 适合本地使用。
+> 在将服务暴露到局域网或互联网之前，**请务必修改 `.env` 中的 `CLAW_PASSWORD`**，并查看 `docker-compose.yml` 中的端口映射区块。
+
 ## 架构
 
 <p align="center">
@@ -54,13 +58,16 @@
 docker compose up -d
 ```
 
-或单独运行：
+或单独运行（仅回环 — 安全的默认配置）：
 ```bash
 docker pull neoplanetz/openclaw-desktop-docker:latest
 docker run -d --name openclaw-desktop \
-  -p 6080:6080 -p 5901:5901 -p 3389:3389 -p 18789:18789 \
+  -p 127.0.0.1:6080:6080 -p 127.0.0.1:5901:5901 \
+  -p 127.0.0.1:3389:3389 -p 127.0.0.1:18789:18789 \
   --shm-size=2g --security-opt seccomp=unconfined \
   neoplanetz/openclaw-desktop-docker:latest
+# 如需暴露到局域网，请先设置 -e PASSWORD=<强密码>，
+# 再从上面的 -p 选项中去掉 127.0.0.1: 前缀。
 ```
 
 ### 从源代码构建

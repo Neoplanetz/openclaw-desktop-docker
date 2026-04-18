@@ -15,6 +15,10 @@ Node.js 22、OpenClaw、Google Chrome、デフォルトのGateway設定がすべ
 
 > **Dockerが初めてですか？** スクリーンショット付きの[完全初心者ガイド](docs/GUIDE_FOR_BEGINNERS.ja.md)をご覧ください。
 
+> ⚠️ **セキュリティに関する注意**
+> デフォルトパスワード（`claw1234`）はこの README に公開されています。デフォルトではポートは `127.0.0.1` のみにバインドされるため、ホスト PC からのみアクセス可能です — ローカル利用では安全です。
+> LAN やインターネットに公開する前に、**必ず `.env` の `CLAW_PASSWORD` を変更**し、`docker-compose.yml` のポートマッピングブロックを確認してください。
+
 ## アーキテクチャ
 
 <p align="center">
@@ -54,13 +58,16 @@ Node.js 22、OpenClaw、Google Chrome、デフォルトのGateway設定がすべ
 docker compose up -d
 ```
 
-または単独実行：
+または単独実行（ループバックのみ — 安全なデフォルト）：
 ```bash
 docker pull neoplanetz/openclaw-desktop-docker:latest
 docker run -d --name openclaw-desktop \
-  -p 6080:6080 -p 5901:5901 -p 3389:3389 -p 18789:18789 \
+  -p 127.0.0.1:6080:6080 -p 127.0.0.1:5901:5901 \
+  -p 127.0.0.1:3389:3389 -p 127.0.0.1:18789:18789 \
   --shm-size=2g --security-opt seccomp=unconfined \
   neoplanetz/openclaw-desktop-docker:latest
+# LAN に公開する場合は、まず -e PASSWORD=<強力なパスワード> を設定した上で、
+# 上記の -p オプションから 127.0.0.1: の接頭辞を削除してください。
 ```
 
 ### ソースからビルド
