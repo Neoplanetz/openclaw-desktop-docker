@@ -82,6 +82,7 @@ start_gateway() {
         sleep 1
         [ -n "$(gateway_pid)" ] && return 0
     done
+    { echo "[$(date +%H:%M:%S)] start_gateway: timed out after 10s (bin=$bin)" >> "$LOG"; } 2>/dev/null || true
     return 1
 }
 
@@ -94,24 +95,24 @@ stop_gateway() {
     done
     pkill -9 -u "$(id -u)" -f "$GW_PATTERN" 2>/dev/null
     sleep 1
+    if [ -n "$(gateway_pid)" ]; then
+        { echo "[$(date +%H:%M:%S)] stop_gateway: PID still present after SIGKILL: $(gateway_pid)" >> "$LOG"; } 2>/dev/null || true
+        return 1
+    fi
     return 0
 }
 
 emit_show_properties() {
-    # Parse the --property argument (either `--property=X,Y` or
-    # `--property X,Y`). systemd accepts both.
+    # Parse --property (both `--property=X,Y` and `--property X,Y` forms).
+    # Uses shift-based walking so a trailing `--property` with no value
+    # exits cleanly under set -u instead of tripping an unbound variable.
     local props=""
-    local i=1
-    while [ "$i" -le "$#" ]; do
-        local arg; arg=$(eval "echo \${$i}")
-        case "$arg" in
-            --property=*) props="${arg#--property=}" ;;
-            --property)
-                i=$((i + 1))
-                props=$(eval "echo \${$i}")
-                ;;
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --property=*) props="${1#--property=}" ;;
+            --property)   shift; props="${1:-}" ;;
         esac
-        i=$((i + 1))
+        shift
     done
     [ -z "$props" ] && props="ActiveState,SubState,MainPID,ExecMainStatus,ExecMainCode"
 
