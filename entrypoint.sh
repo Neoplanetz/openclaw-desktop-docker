@@ -356,6 +356,18 @@ if command -v openclaw &>/dev/null; then
         echo ""
         echo "  Set AI model via Dashboard if not configured"
 
+        # ── systemd user unit registration ────────────────────
+        # Without this unit file, OpenClaw's restart flow short-circuits
+        # to "Gateway service disabled" before our systemctl shim sees
+        # the call. We install it once per container; subsequent updates
+        # reuse the existing file.
+        UNIT_FILE="/home/${USER}/.config/systemd/user/openclaw-gateway.service"
+        if [ ! -f "${UNIT_FILE}" ]; then
+            echo ">> Registering OpenClaw gateway unit file..."
+            su - "${USER}" -c "openclaw gateway install" >/dev/null 2>&1 || \
+                echo "   (unit registration reported a non-fatal error; continuing)"
+        fi
+
         # ── OpenClaw Browser configuration ────────────────────
         if [ "${OPENCLAW_BROWSER_ENABLED}" = "true" ]; then
             echo ">> Configuring OpenClaw browser (CDP Chrome)..."
