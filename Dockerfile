@@ -209,7 +209,7 @@ RUN chmod +x /entrypoint.sh
 # 6080: NoVNC (web browser)
 # 5901: VNC direct connection
 # 3389: RDP
-# 8080: OpenClaw Gateway
+# 18789: OpenClaw Gateway
 EXPOSE 6080 5901 3389 18789
 
 ENTRYPOINT ["/entrypoint.sh"]

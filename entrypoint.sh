@@ -10,6 +10,17 @@ VNC_COL_DEPTH="${VNC_COL_DEPTH:-24}"
 OPENCLAW_BROWSER_ENABLED="${OPENCLAW_BROWSER_ENABLED:-false}"
 OPENCLAW_DISPLAY_TARGET="${OPENCLAW_DISPLAY_TARGET:-auto}"
 
+# ── Input validation ────────────────────────────────────
+# USER and PASSWORD are interpolated into shell commands (su -c, sudoers,
+# chpasswd). Reject values containing characters that would break parsing
+# or enable command injection.
+if ! [[ "$USER" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
+    echo "FATAL: invalid USER '$USER' (must match ^[a-z_][a-z0-9_-]{0,31}$)"; exit 1
+fi
+case "$PASSWORD" in
+    *[$'\n\r:']*) echo "FATAL: PASSWORD contains forbidden characters (newline, CR, or colon)"; exit 1 ;;
+esac
+
 # ── Dynamic user creation ────────────────────────────────
 # Creates the Linux user at runtime so that USER/PASSWORD
 # from docker-compose environment (or .env) take effect.
@@ -17,8 +28,15 @@ if ! id "${USER}" &>/dev/null; then
     echo ">> Creating user '${USER}'..."
     useradd -m -s /bin/bash "${USER}"
     usermod -aG sudo "${USER}"
-    echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/"${USER}"
-    chmod 0440 /etc/sudoers.d/"${USER}"
+    SUDOERS_TMP=$(mktemp)
+    echo "${USER} ALL=(ALL) NOPASSWD:ALL" > "${SUDOERS_TMP}"
+    if visudo -c -f "${SUDOERS_TMP}" >/dev/null; then
+        mv "${SUDOERS_TMP}" /etc/sudoers.d/"${USER}"
+        chmod 0440 /etc/sudoers.d/"${USER}"
+    else
+        rm -f "${SUDOERS_TMP}"
+        echo "FATAL: generated sudoers entry failed visudo check"; exit 1
+    fi
 
     # Initialize home directory from build-time templates
     if [ -d /opt/openclaw-defaults ]; then
