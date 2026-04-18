@@ -118,7 +118,7 @@ XFCE 桌面上放置了三个图标：
 
 | 图标 | 功能 |
 |------|-------------|
-| **OpenClaw Setup** | 运行 `openclaw onboard` — 配置 AI 模型/认证、频道（Telegram、Discord 等）和技能。最后的 Gateway 守护进程安装失败是正常的。 |
+| **OpenClaw Setup** | 运行 `openclaw onboard` — 配置 AI 模型/认证、频道（Telegram、Discord 等）和技能。最后的 Gateway 守护进程安装通过 systemctl 垫片干净完成。 |
 | **OpenClaw Dashboard** | 运行 `openclaw dashboard` — 使用正确的 `localhost` URL 和自动登录令牌打开 Chrome。 |
 | **OpenClaw Terminal** | 打开已准备好 `openclaw` CLI 的 XFCE 终端。 |
 
@@ -268,7 +268,7 @@ docker compose up -d --build
 
 | 问题 | 解决方案 |
 |-------|----------|
-| 无 systemd | 入口脚本直接管理 VNC、xRDP 和 Gateway 进程 |
+| 无 systemd | `systemctl` 垫片将 systemd-user 调用转换为直接进程管理；入口脚本负责启动 VNC、xRDP |
 | Chrome 需要沙箱 | 包装脚本为每次启动添加 `--no-sandbox` |
 | `xdg-open` 使用 Docker 内部 IP | 包装器将 `172.x.x.x` / `10.x.x.x` URL 重写为 `localhost` |
 | 浏览器从终端分离 | xdg-open 包装器中的 `setsid` 防止终端关闭时的 SIGHUP |

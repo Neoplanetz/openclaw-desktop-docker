@@ -118,7 +118,7 @@ Three icons are placed on the XFCE desktop:
 
 | Icon | What It Does |
 |------|-------------|
-| **OpenClaw Setup** | Runs `openclaw onboard` — configure AI model/auth, channels (Telegram, Discord, etc.), and skills. Gateway daemon install failure at the end is normal. |
+| **OpenClaw Setup** | Runs `openclaw onboard` — configure AI model/auth, channels (Telegram, Discord, etc.), and skills. The gateway daemon install at the end completes cleanly via the systemctl shim. |
 | **OpenClaw Dashboard** | Runs `openclaw dashboard` — opens Chrome with the correct `localhost` URL and auto-login token. |
 | **OpenClaw Terminal** | Opens an XFCE terminal with the `openclaw` CLI ready. |
 
@@ -268,7 +268,7 @@ This setup includes several workarounds for running a full GUI + browser + OpenC
 
 | Issue | Solution |
 |-------|----------|
-| No systemd | Entrypoint manages VNC, xRDP, and Gateway processes directly |
+| No systemd | `systemctl` shim translates systemd-user calls into direct process management; entrypoint supervises VNC and xRDP startup |
 | Chrome needs sandbox | Wrapper script adds `--no-sandbox` to every launch |
 | `xdg-open` uses Docker internal IP | Wrapper rewrites `172.x.x.x` / `10.x.x.x` URLs to `localhost` |
 | Browser detaches from terminal | `setsid` in xdg-open wrapper prevents SIGHUP on terminal close |

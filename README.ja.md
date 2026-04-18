@@ -118,7 +118,7 @@ XFCEデスクトップに3つのアイコンが配置されます：
 
 | アイコン | 機能 |
 |------|-------------|
-| **OpenClaw Setup** | `openclaw onboard`を実行 — AIモデル/認証、チャンネル（Telegram、Discordなど）、スキルを設定します。最後のGatewayデーモンインストール失敗は正常です。 |
+| **OpenClaw Setup** | `openclaw onboard`を実行 — AIモデル/認証、チャンネル（Telegram、Discordなど）、スキルを設定します。最後の Gateway デーモンインストールは systemctl シム経由でクリーンに完了します。 |
 | **OpenClaw Dashboard** | `openclaw dashboard`を実行 — 正しい`localhost` URLと自動ログイントークンでChromeを開きます。 |
 | **OpenClaw Terminal** | `openclaw` CLIが使えるXFCEターミナルを開きます。 |
 
@@ -268,7 +268,7 @@ docker compose up -d --build
 
 | 問題 | 解決策 |
 |-------|----------|
-| systemdなし | エントリポイントがVNC、xRDP、Gatewayプロセスを直接管理 |
+| systemdなし | `systemctl` シムが systemd-user 呼び出しを直接プロセス管理に変換; エントリポイントは VNC・xRDP の起動を担当 |
 | Chromeにサンドボックスが必要 | ラッパースクリプトがすべての起動に`--no-sandbox`を追加 |
 | `xdg-open`がDocker内部IPを使用 | ラッパーが`172.x.x.x` / `10.x.x.x` URLを`localhost`に書き換え |
 | ブラウザがターミナルから切り離される | xdg-openラッパーの`setsid`がターミナル終了時のSIGHUPを防止 |
