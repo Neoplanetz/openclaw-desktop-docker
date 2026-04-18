@@ -1,6 +1,10 @@
 # TODO
 
-Deferred items from the security review (see commits `803ffe7`, `3aafb70`, `7639aa1`).
+Deferred items from the security review and the systemctl-shim work.
+
+## Resolved
+
+- **Update/restart flow** — `openclaw update` and dashboard "Restart Gateway" now complete end-to-end via the `systemctl` shim (see `docs/superpowers/specs/2026-04-19-systemctl-shim-design.md`).
 
 ## Pending
 
