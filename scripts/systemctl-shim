@@ -1,0 +1,209 @@
+#!/bin/bash
+# ============================================================
+# systemctl-shim — translate systemd-user calls to direct
+# process management for OpenClaw inside a Docker container.
+#
+# The container has no systemd user instance, so OpenClaw's
+# built-in `systemctl --user restart openclaw-gateway.service`
+# path is a dead end. This shim intercepts the calls OpenClaw
+# actually makes during `openclaw update` and `openclaw gateway
+# restart`, killing the running gateway and spawning a fresh
+# one via `openclaw gateway run`, and emits the property output
+# that OpenClaw's health-polling loop expects.
+#
+# Scope: only `openclaw-gateway.service` is handled specially.
+# Everything else returns success (exit 0) silently, since a
+# container without systemd cannot honor generic systemd calls.
+# The real binary is preserved at /usr/bin/systemctl.real in
+# case a future feature needs it.
+# ============================================================
+set -u
+
+LOG="/tmp/systemctl-shim.log"
+# Best-effort trace; never break callers on log-write failure.
+{ echo "[$(date +%H:%M:%S)] systemctl $* (uid=$(id -u))" >> "$LOG"; } 2>/dev/null || true
+
+# Strip systemd flags that don't affect our dispatch.
+ARGS=()
+for a in "$@"; do
+    case "$a" in
+        --user|--system|--no-pager|--no-page|--quiet) ;;
+        *) ARGS+=("$a") ;;
+    esac
+done
+set -- ${ARGS[@]+"${ARGS[@]}"}
+
+CMD="${1:-}"
+UNIT="${2:-}"
+
+# Prefer post-update binary; fall back to baked image binary.
+resolve_openclaw_bin() {
+    if [ -x /var/openclaw-npm/bin/openclaw ]; then
+        echo "/var/openclaw-npm/bin/openclaw"
+    else
+        echo "/usr/bin/openclaw"
+    fi
+}
+
+# Anchored match: argv[0] must be exactly "openclaw-gateway".
+# Avoids matching shell command lines like `bash -c '... openclaw-gateway ...'`,
+# which SIGTERMed our own shell in earlier iterations.
+GW_PATTERN='^openclaw-gateway$'
+
+gateway_pid() {
+    pgrep -u "$(id -u)" -f "$GW_PATTERN" 2>/dev/null | head -1
+}
+
+unit_file() {
+    echo "${HOME:-/home/$(id -un)}/.config/systemd/user/${1:-openclaw-gateway.service}"
+}
+
+start_gateway() {
+    [ -n "$(gateway_pid)" ] && return 0
+    local bin env_file DISPLAY_VAL XAUTH log
+    bin=$(resolve_openclaw_bin)
+    env_file="${HOME}/.openclaw/.env"
+    DISPLAY_VAL=":1"
+    XAUTH="${HOME}/.Xauthority"
+    if [ -f "$env_file" ]; then
+        local d x
+        d=$(grep '^DISPLAY=' "$env_file" 2>/dev/null | cut -d= -f2)
+        x=$(grep '^XAUTHORITY=' "$env_file" 2>/dev/null | cut -d= -f2)
+        [ -n "$d" ] && DISPLAY_VAL="$d"
+        [ -n "$x" ] && XAUTH="$x"
+    fi
+    log="${HOME}/.openclaw/gateway.log"
+    mkdir -p "${HOME}/.openclaw" 2>/dev/null || true
+    DISPLAY="$DISPLAY_VAL" XAUTHORITY="$XAUTH" \
+        nohup "$bin" gateway run >> "$log" 2>&1 &
+    disown 2>/dev/null || true
+    local i
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        sleep 1
+        [ -n "$(gateway_pid)" ] && return 0
+    done
+    return 1
+}
+
+stop_gateway() {
+    pkill -u "$(id -u)" -f "$GW_PATTERN" 2>/dev/null
+    local i
+    for i in 1 2 3 4 5; do
+        sleep 1
+        [ -z "$(gateway_pid)" ] && return 0
+    done
+    pkill -9 -u "$(id -u)" -f "$GW_PATTERN" 2>/dev/null
+    sleep 1
+    return 0
+}
+
+emit_show_properties() {
+    # Parse the --property argument (either `--property=X,Y` or
+    # `--property X,Y`). systemd accepts both.
+    local props=""
+    local i=1
+    while [ "$i" -le "$#" ]; do
+        local arg; arg=$(eval "echo \${$i}")
+        case "$arg" in
+            --property=*) props="${arg#--property=}" ;;
+            --property)
+                i=$((i + 1))
+                props=$(eval "echo \${$i}")
+                ;;
+        esac
+        i=$((i + 1))
+    done
+    [ -z "$props" ] && props="ActiveState,SubState,MainPID,ExecMainStatus,ExecMainCode"
+
+    local pid active sub main
+    pid=$(gateway_pid)
+    if [ -n "$pid" ]; then
+        active="active"; sub="running"; main="$pid"
+    else
+        active="inactive"; sub="dead"; main="0"
+    fi
+
+    local p
+    IFS=',' read -ra PROP_ARR <<< "$props"
+    for p in "${PROP_ARR[@]}"; do
+        case "$p" in
+            ActiveState)     echo "ActiveState=$active" ;;
+            SubState)        echo "SubState=$sub" ;;
+            MainPID)         echo "MainPID=$main" ;;
+            ExecMainStatus)  echo "ExecMainStatus=0" ;;
+            ExecMainCode)    echo "ExecMainCode=0" ;;
+            *)               echo "$p=" ;;
+        esac
+    done
+}
+
+case "$CMD" in
+    restart)
+        case "$UNIT" in
+            *openclaw-gateway*) stop_gateway; start_gateway; exit $? ;;
+        esac
+        exit 0 ;;
+    start)
+        case "$UNIT" in
+            *openclaw-gateway*) start_gateway; exit $? ;;
+        esac
+        exit 0 ;;
+    stop)
+        case "$UNIT" in
+            *openclaw-gateway*) stop_gateway; exit $? ;;
+        esac
+        exit 0 ;;
+    is-active)
+        case "$UNIT" in
+            *openclaw-gateway*)
+                if [ -n "$(gateway_pid)" ]; then echo active; exit 0
+                else echo inactive; exit 3; fi ;;
+        esac
+        echo active; exit 0 ;;
+    is-enabled)
+        case "$UNIT" in
+            *openclaw-gateway*)
+                if [ -f "$(unit_file openclaw-gateway.service)" ]; then
+                    echo enabled; exit 0
+                else
+                    echo disabled; exit 1
+                fi ;;
+        esac
+        echo enabled; exit 0 ;;
+    status)
+        if [ -z "$UNIT" ]; then
+            echo "● user@$(id -u).service - User Manager"
+            echo "     Loaded: loaded"
+            echo "     Active: active (running)"
+            exit 0
+        fi
+        case "$UNIT" in
+            *openclaw-gateway*)
+                if [ -n "$(gateway_pid)" ]; then
+                    echo "● $UNIT - OpenClaw Gateway"
+                    echo "     Active: active (running)"
+                    echo "   Main PID: $(gateway_pid)"
+                    exit 0
+                else
+                    echo "● $UNIT"
+                    echo "     Active: inactive (dead)"
+                    exit 3
+                fi ;;
+        esac
+        exit 0 ;;
+    show)
+        # shift off "show" and the unit name so emit_show_properties sees only flags.
+        shift 2 2>/dev/null || true
+        emit_show_properties "$@"
+        exit 0 ;;
+    cat)
+        local_unit=$(unit_file "$UNIT")
+        [ -f "$local_unit" ] && cat "$local_unit"
+        exit 0 ;;
+    enable|disable|daemon-reload|reset-failed|reload|reload-or-restart|kill|preset|mask|unmask)
+        exit 0 ;;
+    "")
+        exit 0 ;;
+    *)
+        exit 0 ;;
+esac
