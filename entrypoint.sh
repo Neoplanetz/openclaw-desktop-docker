@@ -337,9 +337,20 @@ if command -v openclaw &>/dev/null; then
     BOOT_XAUTHORITY="${BOOT_XAUTHORITY:-/home/${USER}/.Xauthority}"
     su - "${USER}" -c "DISPLAY='${BOOT_DISPLAY}' XAUTHORITY='${BOOT_XAUTHORITY}' nohup openclaw gateway run >> ${GATEWAY_LOG} 2>&1 &"
 
-    sleep 3
+    # Poll for the gateway process. Pattern is 'openclaw-gateway' (hyphen),
+    # the actual binary name — using 'openclaw gateway' (space) would
+    # spuriously match the su -c "...openclaw gateway run..." command line
+    # and report success even when the gateway failed to start.
+    GATEWAY_READY=false
+    for _ in $(seq 1 15); do
+        if pgrep -u "${USER}" -f 'openclaw-gateway' >/dev/null 2>&1; then
+            GATEWAY_READY=true
+            break
+        fi
+        sleep 1
+    done
 
-    if su - "${USER}" -c "pgrep -f 'openclaw gateway' > /dev/null 2>&1"; then
+    if [ "${GATEWAY_READY}" = "true" ]; then
         echo "Gateway : running ✓"
         echo "Dashboard: http://localhost:18789/"
         echo ""
