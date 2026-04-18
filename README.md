@@ -110,7 +110,7 @@ The Docker image ships with Node.js 22, OpenClaw, and a minimal `~/.openclaw/ope
 6. Installs a `.bashrc` hook that auto-syncs the display when switching between VNC and RDP sessions
 7. Ensures `.npmrc` with user-writable prefix (`/var/openclaw-npm`) exists so `npm install -g` works without root (for clawhub and skill dependencies). The prefix lives outside `/home`, so installed skills are reset on container recreate — preventing stale openclaw versions from shadowing the image-baked one.
 
-Since Docker has no systemd, the Gateway daemon install step during onboarding will fail — **this is expected and can be safely ignored**. The entrypoint manages the Gateway process directly.
+The container ships a `systemctl` shim that translates OpenClaw's systemd-user calls into direct process management, so `openclaw update` and `openclaw gateway restart` — and the equivalent dashboard flows — complete cleanly. The gateway unit file is auto-registered on first boot; no manual `openclaw gateway install` is needed.
 
 ### Desktop Shortcuts
 
@@ -129,7 +129,7 @@ Double-click **"OpenClaw Setup"** on the desktop. The onboarding wizard walks th
 1. **Model / Auth** — choose a provider (OpenAI Codex OAuth, Anthropic API key, etc.)
 2. **Channels** — connect Telegram, Discord, WhatsApp, or skip
 3. **Skills** — install recommended skills or skip
-4. **Gateway daemon** — will fail (no systemd) — ignore this
+4. **Gateway daemon** — installs cleanly via the systemctl shim
 
 The wizard automatically restarts the Gateway and opens the Dashboard when finished.
 
@@ -278,6 +278,7 @@ This setup includes several workarounds for running a full GUI + browser + OpenC
 | Firefox snap broken in Docker | Replaced with Google Chrome deb package |
 | Gateway health check blocks `ws://` to non-loopback | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` permits plaintext `ws://` to RFC 1918 private IPs (Docker internal network only, [added in v2026.2.19](https://github.com/openclaw/openclaw/pull/28670)) |
 | VNC↔RDP display mismatch | `openclaw-sync-display` helper auto-detects active session (VNC `:1` vs xRDP `:10+`), restarts gateway with correct DISPLAY; `.bashrc` hook catches transitions |
+| `openclaw update` leaves dashboard showing "update available" | `systemctl` shim translates OpenClaw's systemd restart calls into direct process management, so update + restart complete atomically |
 | `npm install -g` needs root | `.npmrc` sets `prefix=/var/openclaw-npm` (outside `/home`) so global installs go to a user-writable directory and stay ephemeral across recreates; PATH exported in `.bashrc` |
 
 ## Troubleshooting
@@ -311,7 +312,7 @@ docker exec -u claw openclaw-desktop bash -c \
 ```
 
 ### "Gateway daemon install failed" during onboarding
-This is expected — Docker containers have no systemd. The entrypoint handles Gateway lifecycle instead. Ignore this message.
+Earlier versions of this image surfaced a "systemd not available" message because Docker containers have no systemd. The current image ships a shim that handles these calls transparently; you should no longer see this message during onboarding. If you do, check that `/usr/bin/systemctl` is a symlink to `/usr/local/bin/systemctl-shim`.
 
 ### Dashboard shows "control ui requires device identity"
 The browser opened with a Docker internal IP instead of `localhost`. Close it and use the **"OpenClaw Dashboard"** desktop shortcut, which runs `openclaw dashboard` with the correct URL and token.

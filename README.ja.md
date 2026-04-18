@@ -110,7 +110,7 @@ Dockerイメージには、Node.js 22、OpenClaw、および最小限の`~/.open
 6. VNC ↔ RDPセッション切替時にディスプレイを自動同期する`.bashrc`フックをインストール
 7. ユーザー書き込み可能prefix（`/var/openclaw-npm`）の`.npmrc`が存在することを確認 — `npm install -g`がroot不要で動作（clawhubおよびスキル依存関係のインストール用）。prefixが`/home`の外にあるため、コンテナ再作成時にインストール済みスキルはリセットされ、ユーザーがインストールした古い openclaw がイメージに焼き込まれた版を覆い隠す問題を防ぎます。
 
-Dockerにはsystemdがないため、オンボーディング中のGatewayデーモンインストールステップは失敗します — **これは想定通りであり、安全に無視できます**。エントリポイントがGatewayプロセスを直接管理します。
+このイメージには OpenClaw の systemd-user 呼び出しをプロセス管理に変換する `systemctl` シムが含まれています。そのため `openclaw update` や `openclaw gateway restart`、およびダッシュボードの同等の操作がすべてクリーンに完了します。Gateway の unit ファイルは初回起動時に自動登録されるので、手動で `openclaw gateway install` を実行する必要はありません。
 
 ### デスクトップショートカット
 
@@ -129,7 +129,7 @@ XFCEデスクトップに3つのアイコンが配置されます：
 1. **モデル / 認証** — プロバイダーを選択（OpenAI Codex OAuth、Anthropic APIキーなど）
 2. **チャンネル** — Telegram、Discord、WhatsAppを接続またはスキップ
 3. **スキル** — 推奨スキルをインストールまたはスキップ
-4. **Gatewayデーモン** — 失敗します（systemdなし）— 無視してください
+4. **Gatewayデーモン** — systemctl シム経由でクリーンにインストールされます
 
 ウィザード完了後、Gatewayが自動的に再起動し、ダッシュボードが開きます。
 
@@ -278,6 +278,7 @@ docker compose up -d --build
 | DockerでFirefox snapが動作しない | Google Chrome debパッケージに置き換え |
 | Gatewayヘルスチェックが非ループバック`ws://`をブロック | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`でRFC 1918プライベートIPへのプレーンテキスト`ws://`を許可（Docker内部ネットワークのみ、[v2026.2.19で追加](https://github.com/openclaw/openclaw/pull/28670)） |
 | VNC↔RDPディスプレイ不一致 | `openclaw-sync-display`ヘルパーがアクティブセッションを自動検出（VNC `:1` vs xRDP `:10+`）、正しいDISPLAYでGatewayを再起動；`.bashrc`フックで切替を検知 |
+| `openclaw update` 後にダッシュボードが "アップデート可能" のまま表示される | `systemctl` シムが OpenClaw の systemd restart 呼び出しを直接プロセス管理に変換 — アップデートと再起動がアトミックに完了 |
 | `npm install -g`にrootが必要 | `.npmrc`で`prefix=/var/openclaw-npm`（`/home`の外）を設定 — グローバルインストールがユーザー書き込み可能ディレクトリに移動し、再作成時にリセット；`.bashrc`でPATHをエクスポート |
 
 ## トラブルシューティング
@@ -311,7 +312,7 @@ docker exec -u claw openclaw-desktop bash -c \
 ```
 
 ### オンボーディング中に「Gateway daemon install failed」
-これは想定通りです — Dockerコンテナにはsystemdがありません。エントリポイントが代わりにGatewayのライフサイクルを管理します。このメッセージは無視してください。
+以前のバージョンのイメージでは Docker コンテナに systemd がないため "systemd not available" メッセージが表示されていました。現在のイメージはシムでこの呼び出しを透過的に処理するため、オンボーディング中にこのメッセージは表示されないはずです。もし表示された場合は、`/usr/bin/systemctl` が `/usr/local/bin/systemctl-shim` へのシンボリックリンクになっているか確認してください。
 
 ### ダッシュボードに「control ui requires device identity」が表示される
 ブラウザが`localhost`ではなくDocker内部IPで開かれました。閉じて**「OpenClaw Dashboard」**デスクトップショートカットを使用してください。正しいURLとトークンで`openclaw dashboard`を実行します。

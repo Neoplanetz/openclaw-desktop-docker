@@ -110,7 +110,7 @@ Docker 镜像已包含 Node.js 22、OpenClaw 及最小化的 `~/.openclaw/opencl
 6. 安装 `.bashrc` 钩子，在 VNC 和 RDP 会话切换时自动同步显示
 7. 确保存在用户可写 prefix（`/var/openclaw-npm`）的 `.npmrc`，使 `npm install -g` 无需 root 即可运行（用于 clawhub 和技能依赖安装）。prefix 位于 `/home` 之外，因此容器重建时已安装的技能会被重置，避免用户安装的旧版 openclaw 遮蔽镜像内置版本。
 
-由于 Docker 没有 systemd，引导过程中的 Gateway 守护进程安装步骤会失败 — **这是正常的，可以安全忽略**。入口脚本直接管理 Gateway 进程。
+本镜像内置 `systemctl` 垫片，可将 OpenClaw 的 systemd-user 调用转换为直接进程管理。因此 `openclaw update`、`openclaw gateway restart` 及仪表板中的等价操作都能干净完成。Gateway 的 unit 文件在首次启动时自动注册，无需手动运行 `openclaw gateway install`。
 
 ### 桌面快捷方式
 
@@ -129,7 +129,7 @@ XFCE 桌面上放置了三个图标：
 1. **模型 / 认证** — 选择提供商（OpenAI Codex OAuth、Anthropic API 密钥等）
 2. **频道** — 连接 Telegram、Discord、WhatsApp 或跳过
 3. **技能** — 安装推荐技能或跳过
-4. **Gateway 守护进程** — 会失败（无 systemd）— 忽略即可
+4. **Gateway 守护进程** — 通过 systemctl 垫片干净安装
 
 向导完成后会自动重启 Gateway 并打开仪表板。
 
@@ -278,6 +278,7 @@ docker compose up -d --build
 | Docker 中 Firefox snap 无法使用 | 替换为 Google Chrome deb 包 |
 | Gateway 健康检查阻止非回环 `ws://` | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1` 允许对 RFC 1918 私有 IP 使用明文 `ws://`（仅限 Docker 内部网络，[v2026.2.19 中添加](https://github.com/openclaw/openclaw/pull/28670)） |
 | VNC↔RDP 显示不匹配 | `openclaw-sync-display` 助手自动检测活动会话（VNC `:1` vs xRDP `:10+`），使用正确的 DISPLAY 重启 Gateway；`.bashrc` 钩子捕获切换 |
+| `openclaw update` 后仪表板持续显示"可用更新" | `systemctl` 垫片将 OpenClaw 的 systemd 重启调用转换为直接进程管理 — 更新与重启原子完成 |
 | `npm install -g` 需要 root | `.npmrc` 设置 `prefix=/var/openclaw-npm`（位于 `/home` 之外），使全局安装写入用户可写目录并在重建时重置；`.bashrc` 中导出 PATH |
 
 ## 故障排除
@@ -311,7 +312,7 @@ docker exec -u claw openclaw-desktop bash -c \
 ```
 
 ### 引导过程中出现 "Gateway daemon install failed"
-这是正常的 — Docker 容器没有 systemd。入口脚本会代替管理 Gateway 生命周期。请忽略此消息。
+旧版本镜像因 Docker 容器缺少 systemd 会提示 "systemd not available"。当前镜像通过垫片透明处理该调用，引导过程中不应再看到此消息。如仍出现，请检查 `/usr/bin/systemctl` 是否是指向 `/usr/local/bin/systemctl-shim` 的符号链接。
 
 ### 仪表板显示 "control ui requires device identity"
 浏览器使用了 Docker 内部 IP 而非 `localhost` 打开。关闭并使用 **"OpenClaw Dashboard"** 桌面快捷方式，它会使用正确的 URL 和令牌运行 `openclaw dashboard`。
