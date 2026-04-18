@@ -21,7 +21,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     DISPLAY=:1 \
     VNC_RESOLUTION=1920x1080 \
     VNC_COL_DEPTH=24 \
-    OPENCLAW_DISPLAY_TARGET=auto
+    OPENCLAW_DISPLAY_TARGET=auto \
+    PATH=/var/openclaw-npm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # ── Base packages + locale ─────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -57,6 +58,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     htop \
     net-tools \
+    lsof \
     ca-certificates \
     gnupg \
     lsb-release \
@@ -200,6 +202,16 @@ RUN ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html 2>/dev/null || 
 # ── Display sync helper (policy-based display targeting) ─────
 COPY scripts/openclaw-sync-display /usr/local/bin/openclaw-sync-display
 RUN chmod +x /usr/local/bin/openclaw-sync-display
+
+# ── systemctl shim (real systemd is not present inside the container) ─
+# Intercepts the `systemctl --user …` calls that OpenClaw makes during
+# `openclaw update` and `openclaw gateway restart` and translates them
+# into direct pkill+nohup management of the gateway process.
+# The real binary is preserved at /usr/bin/systemctl.real for escape.
+COPY scripts/systemctl-shim /usr/local/bin/systemctl-shim
+RUN chmod +x /usr/local/bin/systemctl-shim \
+    && mv /usr/bin/systemctl /usr/bin/systemctl.real \
+    && ln -s /usr/local/bin/systemctl-shim /usr/bin/systemctl
 
 # ── Entrypoint script ─────────────────────────────────────────
 COPY entrypoint.sh /entrypoint.sh
