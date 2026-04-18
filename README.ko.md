@@ -110,7 +110,7 @@ Docker 이미지에 Node.js 22, OpenClaw, 최소 `~/.openclaw/openclaw.json` 설
 6. VNC ↔ RDP 세션 전환 시 디스플레이를 자동 동기화하는 `.bashrc` 훅 설치
 7. 사용자 쓰기 가능 prefix(`/var/openclaw-npm`)가 설정된 `.npmrc` 존재 확인 — `npm install -g`가 root 없이 작동 (clawhub 및 스킬 의존성 설치용). prefix가 `/home` 외부에 있어 컨테이너 재생성 시 설치된 스킬이 초기화되며, 이미지에 baked된 openclaw 버전이 사용자가 설치한 구버전에 가려지는 문제를 방지합니다.
 
-이 이미지에는 `systemctl` 심가 포함되어 있어 OpenClaw의 systemd-user 호출을 프로세스 관리로 변환합니다. 따라서 `openclaw update`, `openclaw gateway restart` 및 대시보드의 동일 기능이 모두 깔끔하게 완료됩니다. Gateway unit 파일은 첫 부팅 시 자동 등록되므로 수동으로 `openclaw gateway install`을 실행할 필요가 없습니다.
+이 이미지에는 `systemctl` 심이 포함되어 있어 OpenClaw의 systemd-user 호출을 프로세스 관리로 변환합니다. 따라서 `openclaw update`, `openclaw gateway restart` 및 대시보드의 동일 기능이 모두 깔끔하게 완료됩니다. Gateway unit 파일은 첫 부팅 시 자동 등록되므로 수동으로 `openclaw gateway install`을 실행할 필요가 없습니다.
 
 ### 바탕화면 바로가기
 
@@ -129,7 +129,7 @@ XFCE 바탕화면에 세 개의 아이콘이 배치됩니다:
 1. **모델 / 인증** — 제공자 선택 (OpenAI Codex OAuth, Anthropic API 키 등)
 2. **채널** — Telegram, Discord, WhatsApp 연결 또는 건너뛰기
 3. **스킬** — 추천 스킬 설치 또는 건너뛰기
-4. **Gateway 데몬** — systemctl 심를 통해 깔끔하게 설치됨
+4. **Gateway 데몬** — systemctl 심을 통해 깔끔하게 설치됨
 
 마법사가 완료되면 자동으로 Gateway를 재시작하고 대시보드를 엽니다.
 
@@ -278,7 +278,7 @@ docker compose up -d --build
 | Docker에서 Firefox snap 미작동 | Google Chrome deb 패키지로 대체 |
 | Gateway health check가 non-loopback `ws://` 차단 | `OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1`로 RFC 1918 사설 IP에 대한 plaintext `ws://` 허용 (Docker 내부 네트워크만 해당, [v2026.2.19에서 추가](https://github.com/openclaw/openclaw/pull/28670)) |
 | VNC↔RDP 디스플레이 불일치 | `openclaw-sync-display` 헬퍼가 활성 세션을 자동 감지 (VNC `:1` vs xRDP `:10+`), 올바른 DISPLAY로 Gateway 재시작; `.bashrc` 훅으로 전환 감지 |
-| `openclaw update` 후 대시보드가 계속 "업데이트 가능"으로 표시 | `systemctl` 심가 OpenClaw의 systemd restart 호출을 직접 프로세스 관리로 변환 — 업데이트와 재시작이 원자적으로 완료 |
+| `openclaw update` 후 대시보드가 계속 "업데이트 가능"으로 표시 | `systemctl` 심이 OpenClaw의 systemd restart 호출을 직접 프로세스 관리로 변환 — 업데이트와 재시작이 원자적으로 완료 |
 | `npm install -g`에 root 필요 | `.npmrc`에 `prefix=/var/openclaw-npm` 설정 (`/home` 외부) — 글로벌 설치가 사용자 쓰기 가능 디렉토리로 이동하고 재생성 시 초기화됨; `.bashrc`에서 PATH 내보내기 |
 
 ## 문제 해결
@@ -312,7 +312,7 @@ docker exec -u claw openclaw-desktop bash -c \
 ```
 
 ### 온보딩 중 "Gateway daemon install failed"
-이전 버전의 이미지에서는 Docker 컨테이너에 systemd가 없어서 "systemd not available" 메시지가 뜨곤 했습니다. 현재 이미지는 심로 이 호출을 투명하게 처리하므로 온보딩 중 이 메시지가 보이지 않아야 합니다. 만약 보인다면 `/usr/bin/systemctl`이 `/usr/local/bin/systemctl-shim`을 가리키는 심볼릭 링크인지 확인하세요.
+이전 버전의 이미지에서는 Docker 컨테이너에 systemd가 없어서 "systemd not available" 메시지가 뜨곤 했습니다. 현재 이미지는 심으로 이 호출을 투명하게 처리하므로 온보딩 중 이 메시지가 보이지 않아야 합니다. 만약 보인다면 `/usr/bin/systemctl`이 `/usr/local/bin/systemctl-shim`을 가리키는 심볼릭 링크인지 확인하세요.
 
 ### 대시보드에 "control ui requires device identity" 표시
 브라우저가 `localhost` 대신 Docker 내부 IP로 열렸습니다. 닫고 **"OpenClaw Dashboard"** 바탕화면 바로가기를 사용하세요. 올바른 URL과 토큰으로 `openclaw dashboard`를 실행합니다.
