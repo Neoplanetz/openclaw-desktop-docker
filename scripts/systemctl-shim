@@ -198,8 +198,8 @@ case "$CMD" in
         emit_show_properties "$@"
         exit 0 ;;
     cat)
-        local_unit=$(unit_file "$UNIT")
-        [ -f "$local_unit" ] && cat "$local_unit"
+        unit_path=$(unit_file "$UNIT")
+        [ -f "$unit_path" ] && cat "$unit_path"
         exit 0 ;;
     enable|disable|daemon-reload|reset-failed|reload|reload-or-restart|kill|preset|mask|unmask)
         exit 0 ;;

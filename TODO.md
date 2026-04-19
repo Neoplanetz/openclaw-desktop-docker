@@ -6,6 +6,10 @@ Deferred items from the security review and the systemctl-shim work.
 
 - **Update/restart flow** — `openclaw update` and dashboard "Restart Gateway" now complete end-to-end via the `systemctl` shim (see `docs/superpowers/specs/2026-04-19-systemctl-shim-design.md`).
 
+## Watch list
+
+- **Shim/OpenClaw property coupling** — `scripts/systemctl-shim`'s `emit_show_properties` hardcodes the systemd property keys OpenClaw polls today (`ActiveState`, `SubState`, `MainPID`, `ExecMainStatus`, `ExecMainCode`). If a future OpenClaw release polls additional keys, the shim returns them as empty (`KEY=`) and OpenClaw's parse may fail silently. Re-verify against new OpenClaw releases when bumping `OPENCLAW_VERSION`.
+
 ## Pending
 
 ### C5 — Verify whether `seccomp=unconfined` is still required
