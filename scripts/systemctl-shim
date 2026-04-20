@@ -50,8 +50,35 @@ resolve_openclaw_bin() {
 # which SIGTERMed our own shell in earlier iterations.
 GW_PATTERN='^openclaw-gateway$'
 
+# Authoritative PID record for the gateway daemon we own. Written by
+# entrypoint.sh on first boot and by start_gateway on every restart.
+# stop_gateway uses this exclusively — pgrep-based killing would also match
+# transient `openclaw-gateway` workers that `openclaw gateway install --force`
+# spawns inside its own process tree, causing the install command to die with
+# SIGTERM (exit 143) and OpenClaw to log "updated install refresh failed".
+PID_FILE="${HOME:-/home/$(id -un)}/.openclaw/gateway.pid"
+
 gateway_pid() {
     pgrep -u "$(id -u)" -f "$GW_PATTERN" 2>/dev/null | head -1
+}
+
+# Validate a PID points to a live process whose argv[0] is exactly
+# "openclaw-gateway". Returns 0 if valid, 1 otherwise.
+is_live_gateway() {
+    local pid="$1"
+    [ -n "$pid" ] && [ -d "/proc/$pid" ] || return 1
+    local cmd
+    cmd=$(tr '\0' '\n' < "/proc/$pid/cmdline" 2>/dev/null | head -1)
+    [ "$cmd" = "openclaw-gateway" ]
+}
+
+# Resolve the parent PID of $1 by reading /proc/PID/stat. Stat field 4 is ppid,
+# but field 2 (comm) is parenthesized and may contain spaces — strip it first.
+ppid_of() {
+    local stat
+    stat=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+    # Strip "(comm)" and split on spaces; ppid is now the 2nd field.
+    echo "${stat#*) }" | awk '{print $2}'
 }
 
 unit_file() {
@@ -59,7 +86,14 @@ unit_file() {
 }
 
 start_gateway() {
-    [ -n "$(gateway_pid)" ] && return 0
+    if [ -n "$(gateway_pid)" ]; then
+        # Already running — ensure PID file reflects current reality so a
+        # subsequent stop_gateway can target it.
+        local cur
+        cur=$(gateway_pid)
+        echo "$cur" > "$PID_FILE" 2>/dev/null || true
+        return 0
+    fi
     local bin env_file DISPLAY_VAL XAUTH log
     bin=$(resolve_openclaw_bin)
     env_file="${HOME}/.openclaw/.env"
@@ -77,28 +111,63 @@ start_gateway() {
     DISPLAY="$DISPLAY_VAL" XAUTHORITY="$XAUTH" \
         nohup "$bin" gateway run >> "$log" 2>&1 &
     disown 2>/dev/null || true
-    local i
+    local i pid
     for i in 1 2 3 4 5 6 7 8 9 10; do
         sleep 1
-        [ -n "$(gateway_pid)" ] && return 0
+        pid=$(gateway_pid)
+        if [ -n "$pid" ]; then
+            echo "$pid" > "$PID_FILE" 2>/dev/null || true
+            return 0
+        fi
     done
     { echo "[$(date +%H:%M:%S)] start_gateway: timed out after 10s (bin=$bin)" >> "$LOG"; } 2>/dev/null || true
     return 1
 }
 
 stop_gateway() {
-    pkill -u "$(id -u)" -f "$GW_PATTERN" 2>/dev/null
+    local target=""
+    if [ -f "$PID_FILE" ]; then
+        target=$(cat "$PID_FILE" 2>/dev/null)
+        is_live_gateway "$target" || target=""
+    fi
+    if [ -z "$target" ]; then
+        # No PID file (or stale) — nothing we can confidently call "ours".
+        # Refuse to pkill broadly, since transient install-spawned gateway
+        # workers would be matched too. Return success so callers continue;
+        # the gateway, if absent, will be brought up by the subsequent start.
+        rm -f "$PID_FILE" 2>/dev/null || true
+        return 0
+    fi
+
+    # Kill the wrapper parent too if it is the `openclaw` launcher (argv[0]
+    # exactly "openclaw") so it cannot respawn the worker. Skip if parent is
+    # init (pid 1) — that means our launcher already exited and the worker
+    # was reparented; killing pid 1 would be catastrophic.
+    local parent pcmd
+    parent=$(ppid_of "$target")
+    if [ -n "$parent" ] && [ "$parent" != "1" ] && [ -d "/proc/$parent" ]; then
+        pcmd=$(tr '\0' '\n' < "/proc/$parent/cmdline" 2>/dev/null | head -1)
+        if [ "$pcmd" = "openclaw" ]; then
+            kill "$parent" 2>/dev/null || true
+        fi
+    fi
+    kill "$target" 2>/dev/null || true
+
     local i
     for i in 1 2 3 4 5; do
         sleep 1
-        [ -z "$(gateway_pid)" ] && return 0
+        if ! is_live_gateway "$target"; then
+            rm -f "$PID_FILE" 2>/dev/null || true
+            return 0
+        fi
     done
-    pkill -9 -u "$(id -u)" -f "$GW_PATTERN" 2>/dev/null
+    kill -9 "$target" 2>/dev/null || true
     sleep 1
-    if [ -n "$(gateway_pid)" ]; then
-        { echo "[$(date +%H:%M:%S)] stop_gateway: PID still present after SIGKILL: $(gateway_pid)" >> "$LOG"; } 2>/dev/null || true
+    if is_live_gateway "$target"; then
+        { echo "[$(date +%H:%M:%S)] stop_gateway: PID $target still present after SIGKILL" >> "$LOG"; } 2>/dev/null || true
         return 1
     fi
+    rm -f "$PID_FILE" 2>/dev/null || true
     return 0
 }
 

@@ -351,6 +351,15 @@ if command -v openclaw &>/dev/null; then
     done
 
     if [ "${GATEWAY_READY}" = "true" ]; then
+        # Record the worker PID so the systemctl shim can target it on restart
+        # without pkill-matching transient `openclaw-gateway` workers spawned
+        # by `openclaw gateway install --force` (which would otherwise die with
+        # SIGTERM and surface as "updated install refresh failed").
+        GATEWAY_PID=$(pgrep -u "${USER}" -f 'openclaw-gateway' 2>/dev/null | head -1)
+        if [ -n "${GATEWAY_PID}" ]; then
+            su - "${USER}" -c "mkdir -p ~/.openclaw && echo '${GATEWAY_PID}' > ~/.openclaw/gateway.pid" 2>/dev/null || true
+        fi
+
         echo "Gateway : running ✓"
         echo "Dashboard: http://localhost:18789/"
         echo ""
