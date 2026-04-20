@@ -30,9 +30,9 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 
 | Package | Version |
 |---------|---------|
-| **OpenClaw** | `2026.4.11` |
+| **OpenClaw** | `2026.4.15` |
 | **Node.js** | `v22.22.2` |
-| **Google Chrome** | `147.0.7727.55` |
+| **Google Chrome** | `147.0.7727.101` |
 
 ## Ports
 
