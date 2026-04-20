@@ -38,11 +38,20 @@ if ! id "${USER}" &>/dev/null; then
         echo "FATAL: generated sudoers entry failed visudo check"; exit 1
     fi
 
+    # Seed /etc/skel files (.bashrc, .profile, .bash_logout). When /home/${USER}
+    # is mounted from an empty named volume, the directory pre-exists so
+    # `useradd -m` skips skel copy. Without this, .bashrc never gets created
+    # via skel and any later root-side append produces a root-owned file the
+    # user cannot rewrite (breaks `openclaw update` shell-completion install).
+    if [ -d /etc/skel ]; then
+        cp -an /etc/skel/. /home/${USER}/ 2>/dev/null || true
+    fi
+
     # Initialize home directory from build-time templates
     if [ -d /opt/openclaw-defaults ]; then
         cp -a /opt/openclaw-defaults/. /home/${USER}/
-        chown -R ${USER}:${USER} /home/${USER}
     fi
+    chown -R ${USER}:${USER} /home/${USER}
 fi
 
 # Always sync password (handles password-only changes without rebuild)
@@ -214,6 +223,8 @@ chown -R ${USER}:${USER} /home/${USER}/.local
 BASHRC="/home/${USER}/.bashrc"
 SYNC_MARKER="# openclaw-display-sync"
 if ! grep -q "${SYNC_MARKER}" "${BASHRC}" 2>/dev/null; then
+    # Touch as user (not root) so a missing .bashrc gets the right owner.
+    [ -f "${BASHRC}" ] || su - "${USER}" -c "touch ${BASHRC}" 2>/dev/null
     cat >> "${BASHRC}" << 'BASHRC_EOF'
 
 # openclaw-display-sync
@@ -229,6 +240,9 @@ if command -v openclaw-sync-display >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; th
     unset _oc_gw_pid _oc_gw_disp
 fi
 BASHRC_EOF
+    # Append above ran as root — restore ownership so the user can later
+    # modify their own .bashrc (e.g., shell-completion install via openclaw update).
+    chown "${USER}:${USER}" "${BASHRC}" 2>/dev/null || true
 fi
 
 # ── npm global prefix (user-writable, OUTSIDE home) ──────────────────
