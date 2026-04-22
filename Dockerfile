@@ -14,7 +14,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=ko_KR.UTF-8 \
     TZ=Asia/Seoul \
     USER=claw \
-    PASSWORD=claw1234 \
     VNC_PORT=5901 \
     NOVNC_PORT=6080 \
     RDP_PORT=3389 \
@@ -176,8 +175,13 @@ RUN which vncpasswd || (which tigervncpasswd && ln -sf $(which tigervncpasswd) /
     || (echo "ERROR: vncpasswd not found" && exit 1)
 
 # ── Create user ───────────────────────────────────────────
+# Build-time password is `claw1234` only to give the image a working
+# account on first boot; entrypoint.sh re-runs chpasswd with the runtime
+# value of CLAW_PASSWORD (from .env / compose) before any login surface
+# is exposed. Kept inline here instead of in ENV so the default does not
+# land in `docker inspect` / image history (hadolint SecretsUsedInArgOrEnv).
 RUN useradd -m -s /bin/bash ${USER} \
-    && echo "${USER}:${PASSWORD}" | chpasswd \
+    && echo "${USER}:claw1234" | chpasswd \
     && adduser ${USER} sudo \
     && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/${USER}
 

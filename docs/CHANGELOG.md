@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] - 2026-04-23
+
+### Security
+- Remove `PASSWORD=claw1234` from `ENV` block in the Dockerfile so the default password no longer lands in image history or `docker inspect` output (hadolint `SecretsUsedInArgOrEnv`). The value is now inlined into the build-time `useradd` + `chpasswd` step, and `entrypoint.sh` continues to re-sync with the runtime `CLAW_PASSWORD` on every boot, so behavior is unchanged
+
 ## [1.3.1] - 2026-04-23
 
 ### Fixed
