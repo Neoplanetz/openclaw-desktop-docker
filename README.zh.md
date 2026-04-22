@@ -30,9 +30,10 @@
 | 组件 | 详情 |
 |-----------|---------|
 | **基础系统** | Ubuntu 24.04 |
+| **支持架构** | `linux/amd64`、`linux/arm64`（multi-arch manifest — Docker 根据主机架构自动选择） |
 | **桌面环境** | XFCE4，含韩文 + CJK + Emoji 字体 |
 | **远程访问** | TigerVNC + NoVNC（Web）、xRDP（远程桌面）、VNC |
-| **浏览器** | Google Chrome（默认，`--no-sandbox` 包装器） |
+| **浏览器** | amd64：Google Chrome / arm64：Chromium（Google 不发布 `chrome-stable` 的 arm64 版，改用 Chromium。OpenClaw 的 CDP 自动化行为一致）。两者都带 `--no-sandbox` 包装器。 |
 | **运行时** | Node.js 22（NodeSource） |
 | **OpenClaw** | npm 最新版，默认配置已预置，Gateway 自动启动，用户本地 npm prefix 用于技能安装 |
 | **桌面快捷方式** | OpenClaw 设置、仪表板、终端 |

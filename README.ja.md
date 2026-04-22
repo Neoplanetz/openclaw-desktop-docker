@@ -30,9 +30,10 @@ Node.js 22、OpenClaw、Google Chrome、デフォルトのGateway設定がすべ
 | コンポーネント | 詳細 |
 |-----------|---------|
 | **ベースOS** | Ubuntu 24.04 |
+| **対応アーキテクチャ** | `linux/amd64`、`linux/arm64`（multi-arch manifest — Docker がホストアーキに応じて自動選択） |
 | **デスクトップ** | XFCE4（韓国語 + CJK + 絵文字フォント付き） |
 | **リモートアクセス** | TigerVNC + NoVNC（Web）、xRDP（リモートデスクトップ）、VNC |
-| **ブラウザ** | Google Chrome（デフォルト、`--no-sandbox`ラッパー） |
+| **ブラウザ** | amd64: Google Chrome / arm64: Chromium（Google が `chrome-stable` の arm64 版を配布しないため Chromium で代替。OpenClaw の CDP 自動化はどちらでも同じ動作）。両方とも `--no-sandbox` ラッパー付き。 |
 | **ランタイム** | Node.js 22（NodeSource） |
 | **OpenClaw** | npmの最新版、デフォルト設定済み、Gateway自動起動、スキルインストール用ユーザーローカルnpm prefix |
 | **デスクトップショートカット** | OpenClawセットアップ、ダッシュボード、ターミナル |

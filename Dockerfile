@@ -79,18 +79,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ── Google Chrome (deb package) ────────────────────────────
-# Chrome has many deps, install without --no-install-recommends
-RUN wget -q -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && apt-get update \
-    && apt-get install -y /tmp/google-chrome.deb \
-    || (apt-get -f install -y && apt-get install -y /tmp/google-chrome.deb) \
-    && rm -f /tmp/google-chrome.deb \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# ── Browser: Chrome on amd64, Chromium on arm64 ───────────
+# Google does not publish chrome-stable for arm64, so Chromium (from
+# Ubuntu repos) stands in on that arch. Both code paths produce
+# /usr/bin/google-chrome-stable-real so the wrapper below and every
+# downstream reference (update-alternatives, mimeapps.list,
+# custom-GoogleChrome.desktop) work unchanged across architectures.
+ARG TARGETARCH
+RUN set -e; \
+    apt-get update; \
+    if [ "${TARGETARCH}" = "amd64" ]; then \
+        wget -q -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb; \
+        apt-get install -y /tmp/google-chrome.deb \
+            || (apt-get -f install -y && apt-get install -y /tmp/google-chrome.deb); \
+        rm -f /tmp/google-chrome.deb; \
+    else \
+        # Ubuntu 24.04 ships chromium only as snap-transition stubs, which
+        # do not run inside Docker (no snapd). xtradeb/apps maintains real
+        # .deb packages including arm64; pin the PPA here so amd64 still
+        # pulls Google Chrome above without any PPA overhead.
+        add-apt-repository -y ppa:xtradeb/apps; \
+        apt-get update; \
+        apt-get install -y chromium; \
+        ln -sf /usr/bin/chromium /usr/bin/google-chrome-stable-real; \
+    fi; \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Chrome always needs --no-sandbox inside Docker
-# Wrap original binary + clean stale lock files
-RUN mv /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable-real
+# Chrome always needs --no-sandbox inside Docker. On amd64 the deb installs
+# a real binary we rename; on arm64 google-chrome-stable-real is already a
+# symlink to chromium-browser, so the mv would fail — skip it.
+RUN if [ -f /usr/bin/google-chrome-stable ] && [ ! -e /usr/bin/google-chrome-stable-real ]; then \
+        mv /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable-real; \
+    fi
 
 RUN printf '#!/bin/bash\nexec /usr/bin/google-chrome-stable-real --no-sandbox "$@"\n' \
     > /usr/bin/google-chrome-stable \

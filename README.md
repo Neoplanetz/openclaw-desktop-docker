@@ -30,9 +30,10 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | Component | Details |
 |-----------|---------|
 | **Base OS** | Ubuntu 24.04 |
+| **Architectures** | `linux/amd64`, `linux/arm64` (multi-arch manifest — Docker picks the right variant automatically) |
 | **Desktop** | XFCE4 with Korean + CJK + emoji fonts |
 | **Remote Access** | TigerVNC + NoVNC (web), xRDP (Remote Desktop), raw VNC |
-| **Browser** | Google Chrome (default, `--no-sandbox` wrapper) |
+| **Browser** | Google Chrome on amd64 / Chromium on arm64 (Google does not ship `chrome-stable` for arm64; Chromium is CDP-compatible so OpenClaw browser automation behaves identically). Both ship a `--no-sandbox` wrapper. |
 | **Runtime** | Node.js 22 (NodeSource) |
 | **OpenClaw** | Latest from npm, default config pre-seeded, Gateway auto-starts, user-local npm prefix for skill installs |
 | **Desktop Shortcuts** | OpenClaw Setup, Dashboard, Terminal |

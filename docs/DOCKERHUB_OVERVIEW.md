@@ -21,7 +21,7 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | **Base OS** | Ubuntu 24.04 |
 | **Desktop** | XFCE4 with Korean + CJK + emoji fonts |
 | **Remote Access** | TigerVNC + NoVNC (web), xRDP (Remote Desktop), raw VNC |
-| **Browser** | Google Chrome |
+| **Browser** | Google Chrome (amd64) / Chromium (arm64) |
 | **Runtime** | Node.js 22 |
 | **OpenClaw** | Latest from npm, Gateway auto-starts on boot, user-local npm prefix for skill installs |
 | **Desktop Shortcuts** | OpenClaw Setup, Dashboard, Terminal |
@@ -32,7 +32,17 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 |---------|---------|
 | **OpenClaw** | `2026.4.15` |
 | **Node.js** | `v22.22.2` |
-| **Google Chrome** | `147.0.7727.101` |
+| **Google Chrome** (amd64) | `147.0.7727.101` |
+| **Chromium** (arm64) | apt `chromium-browser` (tracks Ubuntu 24.04 security updates) |
+
+## Supported Architectures
+
+Multi-arch manifest — Docker automatically pulls the right variant for your host:
+
+| Platform | Browser |
+|----------|---------|
+| `linux/amd64` | Google Chrome stable |
+| `linux/arm64` | Chromium (Ubuntu 24.04) — CDP-compatible with OpenClaw |
 
 ## Ports
 
