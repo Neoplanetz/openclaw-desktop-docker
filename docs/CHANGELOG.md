@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-04-23
+
+### Fixed
+- **arm64: `mimeapps.list` pointed at a missing handler** — the chromium package only ships `chromium.desktop`, but `configs/xfce4/mimeapps.list` hardcodes `google-chrome.desktop` as the handler for `text/html` and `x-scheme-handler/http(s)`. On arm64 this meant "Open link in default browser" (from XFCE, xdg-open, or any app opening URLs) silently fell back or failed. The Dockerfile now registers a minimal `google-chrome.desktop` that launches our `/usr/bin/google-chrome-stable` wrapper, whenever the real Chrome one is absent
+- **`openclaw-sync-display` no longer races `openclaw update`** — the helper previously did its own `pkill -u $USER -f 'openclaw-gateway'` + `nohup` relaunch, which (a) killed `openclaw gateway install --force`'s transient workers when the `.bashrc` hook fired during an update, and (b) never refreshed `~/.openclaw/gateway.pid`. It now delegates to `systemctl --user restart openclaw-gateway.service`, so stop/start go through the shim and the PID file stays current
+
+### Changed
+- `scripts/update-dockerhub-overview.sh` pins `--platform linux/amd64` when probing Chrome version and pulls the Chromium version from the arm64 variant separately, so the Bundled Versions table gets the correct browser in each row
+- `docs/CHANGELOG.md` and `TODO.md` stale-line cleanup
+
+## [1.3.0] - 2026-04-22
+
+### Added
+- **Multi-arch support** — image now publishes both `linux/amd64` and `linux/arm64` manifests
+  - `ARG TARGETARCH` splits the browser install: amd64 uses Google Chrome stable; arm64 uses `chromium` from `ppa:xtradeb/apps` (Ubuntu 24.04's own `chromium-browser` package is a snap-transition stub that does not run inside Docker)
+  - Both code paths produce `/usr/bin/google-chrome-stable-real` so the `--no-sandbox` wrapper, `update-alternatives`, `mimeapps.list`, and custom `.desktop` entries work unchanged
+  - arm64 images register a minimal `google-chrome.desktop` pointing to our wrapper, because the chromium package only ships `chromium.desktop` and `mimeapps.list` hardcodes the former
+- `docs/DOCKERHUB_OVERVIEW.md` gains a "Supported Architectures" section
+
+### Changed
+- `scripts/openclaw-sync-display` delegates gateway restart to the systemctl shim instead of doing its own `pkill` + `nohup` — this ensures `~/.openclaw/gateway.pid` stays consistent and avoids killing install-spawned transient workers during a concurrent `openclaw update` (same class of bug as 1.2.4)
+- `scripts/update-dockerhub-overview.sh` sed patterns updated for the new `(amd64)` / `(arm64)` row labels, pulls Chromium version from the arm64 variant separately
+
+## [1.2.4] - 2026-04-22
+
+### Added
+- **`systemctl` user shim** (`scripts/systemctl-shim`) — translates OpenClaw's `systemctl --user {is-enabled,status,daemon-reload,enable,restart,start,stop,show}` calls into direct process management, so `openclaw update` and dashboard "Restart Gateway" complete end-to-end inside a container that has no systemd. Gateway unit file is auto-registered on first boot (`openclaw gateway install`), and `emit_show_properties` mirrors the systemd property output OpenClaw polls during health checks
+- `/var/openclaw-npm/bin` prefixed onto `PATH` so `openclaw update`'s writable npm install takes precedence over the image-baked binary without requiring a shell restart
+- `~/.openclaw/gateway.pid` — authoritative PID record written by both entrypoint and the shim's `start_gateway`; the shim's `stop_gateway` targets only this PID
+
+### Fixed
+- `openclaw update` no longer logs `Failed to refresh gateway service environment from updated install` — the shim previously used `pkill -f '^openclaw-gateway$'` which also killed transient `openclaw-gateway` workers that `gateway install --force` spawns in its own process tree; the PID-file approach protects them
+- Custom `CLAW_USER` values (e.g. `neovis`) were left with a root-owned `~/.bashrc` because the named home volume pre-created `/home/${USER}` and `useradd -m` silently skipped the `/etc/skel` copy, then the entrypoint appended the display-sync snippet as root. Entrypoint now force-seeds `/etc/skel` with `cp -an` and chowns `.bashrc` after every append
+- Loopback-only port bindings (`127.0.0.1`) by default in `docker-compose.yml`, with a commented LAN-exposure block documenting the risks (closes C3 of security review)
+- Entrypoint validates `USER`/`PASSWORD` with strict regex + forbidden-character checks and runs the generated sudoers entry through `visudo -c` before installing it
+- Gateway readiness check switched from single-probe to polling with an anchored pattern (`openclaw-gateway` exact, not `openclaw gateway` prefix) to avoid false positives on the `su -c` command line
+
+### Security
+- Gateway readiness detection pattern hardened (matches argv[0] exactly so shell launchers don't spoof a running gateway)
+- `.dockerignore` + `.gitignore` added to prevent sensitive files from leaking into build context or repo
+
 ## [1.2.3] - 2026-04-13
 
 ### Changed

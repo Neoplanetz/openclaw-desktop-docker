@@ -185,20 +185,20 @@ if [ "${DISPLAY_CHANGED}" = "true" ]; then
 
     # Step 2: Restart gateway — it caches DISPLAY in process env,
     # so updating .env alone is not enough for the running process.
-    # Note: the binary name is "openclaw-gateway" (hyphen), not "openclaw gateway" (space).
-    # Using pgrep -u + -f with the exact binary name avoids false matches
-    # from su -c "..." command strings that contain "openclaw gateway".
-    if pgrep -u "${TARGET_USER}" -f 'openclaw-gateway' >/dev/null 2>&1; then
+    # Delegate to the systemctl shim (restart reads the just-updated .env
+    # for new DISPLAY/XAUTHORITY and maintains ~/.openclaw/gateway.pid).
+    # Important: do NOT pkill directly — `openclaw update`'s `gateway
+    # install --force` spawns transient `openclaw-gateway` workers inside
+    # its own process tree, and a broad pkill would SIGTERM them and break
+    # the update (see commit c1495c3). The shim's stop_gateway uses the
+    # PID file and only targets our own daemon.
+    if pgrep -u "${TARGET_USER}" -f '^openclaw-gateway$' >/dev/null 2>&1; then
         log "Restarting gateway with DISPLAY=${NEW_DISPLAY}..."
-        pkill -u "${TARGET_USER}" -f 'openclaw-gateway' 2>/dev/null || true
-        sleep 2
-        GATEWAY_LOG="${OPENCLAW_DIR}/gateway.log"
-        run_cmd "DISPLAY='${NEW_DISPLAY}' XAUTHORITY='${NEW_XAUTHORITY}' nohup openclaw gateway run >> '${GATEWAY_LOG}' 2>&1 &" 2>/dev/null || true
-        sleep 3
-        if pgrep -u "${TARGET_USER}" -f 'openclaw-gateway' >/dev/null 2>&1; then
+        run_cmd "systemctl --user restart openclaw-gateway.service" 2>/dev/null || true
+        if pgrep -u "${TARGET_USER}" -f '^openclaw-gateway$' >/dev/null 2>&1; then
             log "Gateway restarted ✓"
         else
-            log "WARN: Gateway may not have restarted (check ${GATEWAY_LOG})"
+            log "WARN: Gateway may not have restarted (check ${OPENCLAW_DIR}/gateway.log)"
         fi
     fi
 

@@ -118,6 +118,28 @@ RUN printf '#!/bin/bash\nexec /usr/bin/google-chrome-stable-real --no-sandbox "$
     && rm -f /usr/bin/google-chrome 2>/dev/null; \
        cp /usr/bin/google-chrome-stable /usr/bin/google-chrome
 
+# On arm64 the chromium package only ships chromium.desktop — but
+# configs/xfce4/mimeapps.list hardcodes google-chrome.desktop as the
+# http(s)/html handler, so xdg-open would have nothing to launch and
+# "open link in browser" from XFCE would silently fail. Write a minimal
+# google-chrome.desktop that launches our wrapper (which works on both
+# arches) whenever the real one is absent.
+RUN if [ ! -f /usr/share/applications/google-chrome.desktop ]; then \
+        { echo '[Desktop Entry]'; \
+          echo 'Version=1.0'; \
+          echo 'Name=Google Chrome'; \
+          echo 'GenericName=Web Browser'; \
+          echo 'Exec=/usr/bin/google-chrome-stable %U'; \
+          echo 'Terminal=false'; \
+          echo 'Icon=chromium'; \
+          echo 'Type=Application'; \
+          echo 'Categories=Network;WebBrowser;'; \
+          echo 'MimeType=text/html;text/xml;application/xhtml+xml;application/xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/about;x-scheme-handler/unknown;'; \
+          echo 'StartupNotify=true'; \
+        } > /usr/share/applications/google-chrome.desktop \
+        && chmod 0644 /usr/share/applications/google-chrome.desktop; \
+    fi
+
 # ── Set Chrome as default browser ─────────────────────────
 RUN update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/bin/google-chrome-stable 200 \
     && update-alternatives --set x-www-browser /usr/bin/google-chrome-stable \

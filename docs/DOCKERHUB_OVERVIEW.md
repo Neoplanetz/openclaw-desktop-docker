@@ -33,7 +33,9 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | **OpenClaw** | `2026.4.15` |
 | **Node.js** | `v22.22.2` |
 | **Google Chrome** (amd64) | `147.0.7727.101` |
-| **Chromium** (arm64) | `chromium` from `ppa:xtradeb/apps` (Ubuntu 24.04's own `chromium-browser` is a snap-transition stub that does not run inside Docker) |
+| **Chromium** (arm64) | `145.0.7632.75` (from `ppa:xtradeb/apps`) |
+
+> Ubuntu 24.04's own `chromium-browser` package is a snap-transition stub that does not run inside Docker, so arm64 builds pull a real `.deb` from the `xtradeb/apps` PPA.
 
 ## Supported Architectures
 
@@ -122,7 +124,7 @@ echo 'OPENAI_API_KEY=sk-...' >> ~/.openclaw/.env
 |----------|---------|---------|-------------|
 | `CLAW_USER` | `USER` | `claw` | Linux username |
 | `CLAW_PASSWORD` | `PASSWORD` | `claw1234` | VNC / RDP / sudo password |
-| `OPENCLAW_VERSION` | *(build arg)* | `latest` | OpenClaw npm package version (e.g. `latest`, `2026.3.28`) — used at `docker compose build` time |
+| `OPENCLAW_VERSION` | *(build arg)* | `latest` | OpenClaw npm package version (e.g. `latest`, `2026.4.15`) — used at `docker compose build` time |
 | — | `VNC_RESOLUTION` | `1920x1080` | Desktop resolution |
 | — | `VNC_COL_DEPTH` | `24` | Color depth |
 | — | `TZ` | `Asia/Seoul` | Timezone |

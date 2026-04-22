@@ -30,7 +30,7 @@ Removing it shrinks the container's syscall attack surface significantly.
    doesn't re-question it).
 
 ### C4 — Optional NoVNC TLS for LAN-exposure users
-**File:** `entrypoint.sh:132` (websockify launch)
+**File:** `entrypoint.sh:159` (websockify launch)
 
 Now that ports default to `127.0.0.1` (commit `7639aa1`), plaintext
 NoVNC is no longer a default-config risk. But users who opt into LAN
