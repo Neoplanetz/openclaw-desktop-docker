@@ -33,7 +33,7 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | **OpenClaw** | `2026.4.15` |
 | **Node.js** | `v22.22.2` |
 | **Google Chrome** (amd64) | `147.0.7727.101` |
-| **Chromium** (arm64) | apt `chromium-browser` (tracks Ubuntu 24.04 security updates) |
+| **Chromium** (arm64) | `chromium` from `ppa:xtradeb/apps` (Ubuntu 24.04's own `chromium-browser` is a snap-transition stub that does not run inside Docker) |
 
 ## Supported Architectures
 
