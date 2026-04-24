@@ -170,6 +170,21 @@ RUN npm install -g openclaw@${OPENCLAW_VERSION} \
     && echo "${OC_VER}" > /etc/openclaw-version \
     && echo "OpenClaw ${OC_VER} installed"
 
+# ── Agent CLIs: Claude Code + OpenAI Codex ──
+# OpenClaw can delegate turns to these CLIs when the user authenticates
+# them separately at runtime. Installing globally via npm lands them in
+# /var/openclaw-npm/bin (already on PATH) so every runtime user shares
+# the same binaries without relying on per-home installers. No
+# credentials are baked — `claude`/`codex` prompt for login on first use.
+ARG CLAUDE_CODE_VERSION=latest
+ARG CODEX_VERSION=latest
+RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} @openai/codex@${CODEX_VERSION} \
+    && CC_VER=$(npm list -g @anthropic-ai/claude-code --depth=0 2>/dev/null | grep -oP '@anthropic-ai/claude-code@\K[^\s]+' || echo 'unknown') \
+    && CX_VER=$(npm list -g @openai/codex --depth=0 2>/dev/null | grep -oP '@openai/codex@\K[^\s]+' || echo 'unknown') \
+    && echo "${CC_VER}" > /etc/claude-code-version \
+    && echo "${CX_VER}" > /etc/codex-version \
+    && echo "Claude Code ${CC_VER} + Codex ${CX_VER} installed"
+
 # ── Verify vncpasswd is available ────────────────────────
 RUN which vncpasswd || (which tigervncpasswd && ln -sf $(which tigervncpasswd) /usr/local/bin/vncpasswd) \
     || (echo "ERROR: vncpasswd not found" && exit 1)

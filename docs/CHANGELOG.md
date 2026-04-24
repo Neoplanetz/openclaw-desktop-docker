@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-04-24
+
+### Added
+- **Agent CLIs pre-installed** — the image now ships `@anthropic-ai/claude-code` and `@openai/codex` installed globally via npm (land in `/var/openclaw-npm/bin`, already on `PATH`). OpenClaw recently added support for delegating turns to these CLIs; shipping them pre-installed means users can `openclaw` → "use Claude Code / Codex" without a separate setup step. No credentials are baked: running `claude` or `codex` for the first time still triggers the normal login flow
+- Build args `CLAUDE_CODE_VERSION` and `CODEX_VERSION` (both default to `latest`) so CI or reproducible builds can pin the bundled versions — same pattern as `OPENCLAW_VERSION`
+- Bundled versions recorded to `/etc/claude-code-version` and `/etc/codex-version` at build time for diagnostics
+
+### Changed
+- `docs/DOCKERHUB_OVERVIEW.md` and all four READMEs gain an "Agent CLIs" row
+- Bundled versions table lists Claude Code + Codex alongside OpenClaw/Node/Chrome
+
 ## [1.3.2] - 2026-04-23
 
 ### Security

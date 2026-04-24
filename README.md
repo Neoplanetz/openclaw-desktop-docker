@@ -36,6 +36,7 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | **Browser** | Google Chrome on amd64 / Chromium on arm64 (Google does not ship `chrome-stable` for arm64; Chromium is CDP-compatible so OpenClaw browser automation behaves identically). Both ship a `--no-sandbox` wrapper. |
 | **Runtime** | Node.js 22 (NodeSource) |
 | **OpenClaw** | Latest from npm, default config pre-seeded, Gateway auto-starts, user-local npm prefix for skill installs |
+| **Agent CLIs** | `claude` ([Claude Code](https://docs.claude.com/en/docs/claude-code/overview)) and `codex` ([OpenAI Codex](https://github.com/openai/codex)) pre-installed via npm. No credentials baked — run `claude` or `codex` once to authenticate. Pinnable via build args `CLAUDE_CODE_VERSION` / `CODEX_VERSION`. |
 | **Desktop Shortcuts** | OpenClaw Setup, Dashboard, Terminal |
 
 ## Ports

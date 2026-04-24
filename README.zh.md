@@ -36,6 +36,7 @@
 | **浏览器** | amd64：Google Chrome / arm64：Chromium（Google 不发布 `chrome-stable` 的 arm64 版，改用 Chromium。OpenClaw 的 CDP 自动化行为一致）。两者都带 `--no-sandbox` 包装器。 |
 | **运行时** | Node.js 22（NodeSource） |
 | **OpenClaw** | npm 最新版，默认配置已预置，Gateway 自动启动，用户本地 npm prefix 用于技能安装 |
+| **代理 CLI** | `claude`（[Claude Code](https://docs.claude.com/en/docs/claude-code/overview)）和 `codex`（[OpenAI Codex](https://github.com/openai/codex)）通过 npm 预装。镜像不包含凭证，首次使用时运行 `claude` 或 `codex` 登录即可。构建时可用 ARG `CLAUDE_CODE_VERSION` / `CODEX_VERSION` 固定版本。 |
 | **桌面快捷方式** | OpenClaw 设置、仪表板、终端 |
 
 ## 端口
