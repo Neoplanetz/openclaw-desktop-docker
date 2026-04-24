@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] - 2026-04-24
+
+### Changed
+- Bump bundled OpenClaw to `2026.4.22` (was `2026.4.21` in v1.4.0 — upstream released a new patch within a few hours of our build)
+- Bump bundled Google Chrome on amd64 to `147.0.7727.116` (auto-picked up by fresh build)
+
 ## [1.4.0] - 2026-04-24
 
 ### Added
