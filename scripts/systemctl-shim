@@ -152,46 +152,81 @@ start_gateway() {
 }
 
 stop_gateway() {
-    local target=""
+    # Build the kill list. We always include any openclaw-gateway process
+    # whose ppid == 1 — that's the orphaned-daemon shape any of our
+    # gateways take once their launching wrapper exits, INCLUDING gateways
+    # spawned by an internal openclaw config-reload (e.g. when the user
+    # toggles `browser.enabled` from the dashboard, OpenClaw self-restarts
+    # the gateway outside our shim, which makes the PID file stale). It
+    # also includes the original PID file entry as a belt-and-braces
+    # measure. Workers spawned inside `openclaw gateway install --force`
+    # have a non-1 ppid (the install command itself) and are therefore
+    # NEVER on this list — exactly the protection commit c1495c3 added.
+    local kill_list=""
     if [ -f "$PID_FILE" ]; then
-        target=$(cat "$PID_FILE" 2>/dev/null)
-        is_live_gateway "$target" || target=""
+        local existing
+        existing=$(cat "$PID_FILE" 2>/dev/null)
+        if is_live_gateway "$existing"; then
+            kill_list="$existing"
+        fi
     fi
-    if [ -z "$target" ]; then
-        # No PID file (or stale) — nothing we can confidently call "ours".
-        # Refuse to pkill broadly, since transient install-spawned gateway
-        # workers would be matched too. Return success so callers continue;
-        # the gateway, if absent, will be brought up by the subsequent start.
+    local p
+    for p in $(pgrep -u "$(id -u)" -f "$GW_PATTERN" 2>/dev/null); do
+        if [ "$(ppid_of "$p")" = "1" ]; then
+            case " $kill_list " in
+                *" $p "*) ;;
+                *) kill_list="${kill_list:+$kill_list }$p" ;;
+            esac
+        fi
+    done
+
+    if [ -z "$kill_list" ]; then
         rm -f "$PID_FILE" 2>/dev/null || true
         return 0
     fi
 
-    # Kill the wrapper parent too if it is the `openclaw` launcher (argv[0]
-    # exactly "openclaw") so it cannot respawn the worker. Skip if parent is
-    # init (pid 1) — that means our launcher already exited and the worker
-    # was reparented; killing pid 1 would be catastrophic.
-    local parent pcmd
-    parent=$(ppid_of "$target")
-    if [ -n "$parent" ] && [ "$parent" != "1" ] && [ -d "/proc/$parent" ]; then
-        pcmd=$(tr '\0' '\n' < "/proc/$parent/cmdline" 2>/dev/null | head -1)
-        if [ "$pcmd" = "openclaw" ]; then
-            kill "$parent" 2>/dev/null || true
+    # Also walk each target's parent and kill the openclaw wrapper if
+    # alive — prevents the wrapper from respawning the worker right after
+    # we kill it. Skip ppid=1 (init) and non-openclaw parents.
+    for p in $kill_list; do
+        local parent pcmd
+        parent=$(ppid_of "$p")
+        if [ -n "$parent" ] && [ "$parent" != "1" ] && [ -d "/proc/$parent" ]; then
+            pcmd=$(tr '\0' '\n' < "/proc/$parent/cmdline" 2>/dev/null | head -1)
+            if [ "$pcmd" = "openclaw" ]; then
+                kill "$parent" 2>/dev/null || true
+            fi
         fi
-    fi
-    kill "$target" 2>/dev/null || true
+        kill "$p" 2>/dev/null || true
+    done
 
-    local i
+    local i still
     for i in 1 2 3 4 5; do
         sleep 1
-        if ! is_live_gateway "$target"; then
+        still=""
+        for p in $kill_list; do
+            if is_live_gateway "$p"; then
+                still="${still:+$still }$p"
+            fi
+        done
+        if [ -z "$still" ]; then
             rm -f "$PID_FILE" 2>/dev/null || true
             return 0
         fi
+        kill_list="$still"
     done
-    kill -9 "$target" 2>/dev/null || true
+    for p in $kill_list; do
+        kill -9 "$p" 2>/dev/null || true
+    done
     sleep 1
-    if is_live_gateway "$target"; then
-        { echo "[$(date +%H:%M:%S)] stop_gateway: PID $target still present after SIGKILL" >> "$LOG"; } 2>/dev/null || true
+    still=""
+    for p in $kill_list; do
+        if is_live_gateway "$p"; then
+            still="${still:+$still }$p"
+        fi
+    done
+    if [ -n "$still" ]; then
+        { echo "[$(date +%H:%M:%S)] stop_gateway: PIDs $still still present after SIGKILL" >> "$LOG"; } 2>/dev/null || true
         return 1
     fi
     rm -f "$PID_FILE" 2>/dev/null || true

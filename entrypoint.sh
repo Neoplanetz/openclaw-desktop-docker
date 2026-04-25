@@ -408,6 +408,18 @@ if command -v openclaw &>/dev/null; then
         else
             echo "Browser : disabled (set OPENCLAW_BROWSER_ENABLED=true in .env to enable)"
         fi
+
+        # Re-sync gateway.pid: every config write above triggers OpenClaw's
+        # internal config-reload restart, which spawns a new gateway worker
+        # *outside* the systemctl shim — leaving ~/.openclaw/gateway.pid
+        # pointing at the (now-dead) original. The shim's stop_gateway has
+        # a safety net (it also targets ppid=1 orphans), but a fresh,
+        # accurate PID file lets the next restart take the cheap path.
+        sleep 3
+        SETTLED_PID=$(pgrep -u "${USER}" -f '^openclaw-gateway$' 2>/dev/null | head -1)
+        if [ -n "${SETTLED_PID}" ]; then
+            su - "${USER}" -c "echo '${SETTLED_PID}' > ~/.openclaw/gateway.pid" 2>/dev/null || true
+        fi
     else
         echo "Gateway : start failed (log: ${GATEWAY_LOG})"
         echo "  Manual: nohup openclaw gateway run >> ~/.openclaw/gateway.log 2>&1 & disown"

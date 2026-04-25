@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.3] - 2026-04-26
+
+### Fixed
+- **Stale `gateway.pid` after OpenClaw's internal config-reload restart.** When the gateway detects a config change (e.g. `browser.enabled` toggled, channel auth tokens added during onboarding), it self-restarts the worker *outside* the systemctl shim — leaving `~/.openclaw/gateway.pid` pointing at a now-dead PID. Two safeguards added:
+  - `stop_gateway` no longer trusts the PID file alone. It now also targets every `openclaw-gateway` process whose `ppid == 1` (i.e. an orphaned daemon — exactly the shape an internally-restarted gateway takes), while continuing to ignore workers spawned inside `gateway install --force` (whose ppid is the install command itself, never 1)
+  - `entrypoint.sh` re-detects and rewrites `gateway.pid` after the browser-config writes that trigger the first internal restart, so the file is accurate from boot
+
+### Verified
+End-to-end smoke test with `CLAW_USER=neovis` + `OPENCLAW_BROWSER_ENABLED=true`:
+- Fresh `compose up -d --build` → dashboard reachable on first boot, `gateway.pid` matches running gateway
+- `openclaw gateway install --force` → no PID flapping, dashboard stays up
+- `openclaw update --yes` → completes cleanly (the bundled `openclaw doctor` step inside update no longer needs the user to invoke it manually)
+- All scenarios: PID file == running gateway PID after the operation
+
 ## [1.4.2] - 2026-04-26
 
 ### Fixed
