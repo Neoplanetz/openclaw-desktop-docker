@@ -86,15 +86,26 @@ unit_file() {
 }
 
 start_gateway() {
-    if [ -n "$(gateway_pid)" ]; then
-        # Already running — ensure PID file reflects current reality so a
-        # subsequent stop_gateway can target it.
-        local cur
-        cur=$(gateway_pid)
-        echo "$cur" > "$PID_FILE" 2>/dev/null || true
-        return 0
+    # Idempotent fast path: if PID file points at a live gateway we own,
+    # nothing to do. Crucially, do NOT trust pgrep alone here — when this
+    # is called as the second half of a `restart` triggered by
+    # `openclaw gateway install --force`, the install command itself
+    # spawns a transient `openclaw-gateway` worker inside its own process
+    # tree. A naive `gateway_pid` (pgrep) would match that transient
+    # worker, we'd write its PID to the file and return without spawning,
+    # and the moment the install command exited the gateway would vanish
+    # entirely. The PID file is the only authoritative record of our
+    # daemon, so we anchor on it here.
+    if [ -f "$PID_FILE" ]; then
+        local existing
+        existing=$(cat "$PID_FILE" 2>/dev/null)
+        if is_live_gateway "$existing"; then
+            return 0
+        fi
+        rm -f "$PID_FILE" 2>/dev/null || true
     fi
-    local bin env_file DISPLAY_VAL XAUTH log
+
+    local bin env_file DISPLAY_VAL XAUTH log launcher
     bin=$(resolve_openclaw_bin)
     env_file="${HOME}/.openclaw/.env"
     DISPLAY_VAL=":1"
@@ -110,17 +121,33 @@ start_gateway() {
     mkdir -p "${HOME}/.openclaw" 2>/dev/null || true
     DISPLAY="$DISPLAY_VAL" XAUTHORITY="$XAUTH" \
         nohup "$bin" gateway run >> "$log" 2>&1 &
+    launcher=$!
     disown 2>/dev/null || true
-    local i pid
+
+    # Wait for our spawn to become the openclaw-gateway daemon. The
+    # current `openclaw` Node binary doesn't fork — it rewrites its own
+    # argv via `process.title = 'openclaw-gateway'` shortly after start —
+    # so the launcher PID itself is the gateway. Older versions (or
+    # future ones) may fork a worker child, so we also check direct
+    # children of the launcher. Both code paths are restricted to OUR
+    # process tree, which inherently filters out the transient
+    # `openclaw-gateway` workers spawned inside `gateway install --force`
+    # (their parent is the install command, not our launcher).
+    local i p
     for i in 1 2 3 4 5 6 7 8 9 10; do
         sleep 1
-        pid=$(gateway_pid)
-        if [ -n "$pid" ]; then
-            echo "$pid" > "$PID_FILE" 2>/dev/null || true
+        if is_live_gateway "$launcher"; then
+            echo "$launcher" > "$PID_FILE" 2>/dev/null || true
             return 0
         fi
+        for p in $(pgrep -u "$(id -u)" -P "$launcher" 2>/dev/null); do
+            if is_live_gateway "$p"; then
+                echo "$p" > "$PID_FILE" 2>/dev/null || true
+                return 0
+            fi
+        done
     done
-    { echo "[$(date +%H:%M:%S)] start_gateway: timed out after 10s (bin=$bin)" >> "$LOG"; } 2>/dev/null || true
+    { echo "[$(date +%H:%M:%S)] start_gateway: timed out after 10s (bin=$bin, launcher=$launcher)" >> "$LOG"; } 2>/dev/null || true
     return 1
 }
 

@@ -164,10 +164,26 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && node --version && npm --version
 
 # ── OpenClaw (baked into image, onboard on first run) ──
+# OpenClaw initialises plugin runtime deps via `npm install` *inside* its
+# own extension directories on first start (e.g. <openclaw>/dist/extensions/
+# {acpx,browser}/node_modules). The system npm prefix is root-owned, so a
+# non-root runtime user (claw, neovis, …) hits EACCES and the gateway logs
+# `failed to install bundled runtime deps` — leaving plugins disabled.
+#
+# Fix: own the openclaw tree as the dedicated `openclaw` group with
+# group-write permissions (mode 0775 / 0664). Runtime users are added to
+# this group on creation (Dockerfile build user `claw` below; entrypoint
+# does the same for dynamic users). Other-write is intentionally NOT set —
+# OpenClaw refuses to load plugins from world-writable paths as a
+# hardening measure.
+RUN groupadd --system --gid 5000 openclaw
 ARG OPENCLAW_VERSION=latest
 RUN npm install -g openclaw@${OPENCLAW_VERSION} \
     && OC_VER=$(npm list -g openclaw --depth=0 2>/dev/null | grep -oP 'openclaw@\K[^\s]+' || echo 'unknown') \
     && echo "${OC_VER}" > /etc/openclaw-version \
+    && OC_ROOT=$(npm root -g)/openclaw \
+    && chgrp -R openclaw "${OC_ROOT}" \
+    && chmod -R g+rwX "${OC_ROOT}" \
     && echo "OpenClaw ${OC_VER} installed"
 
 # ── Agent CLIs: Claude Code + OpenAI Codex ──
@@ -195,7 +211,7 @@ RUN which vncpasswd || (which tigervncpasswd && ln -sf $(which tigervncpasswd) /
 # value of CLAW_PASSWORD (from .env / compose) before any login surface
 # is exposed. Kept inline here instead of in ENV so the default does not
 # land in `docker inspect` / image history (hadolint SecretsUsedInArgOrEnv).
-RUN useradd -m -s /bin/bash ${USER} \
+RUN useradd -m -s /bin/bash -G openclaw ${USER} \
     && echo "${USER}:claw1234" | chpasswd \
     && adduser ${USER} sudo \
     && echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/${USER}

@@ -28,6 +28,13 @@ if ! id "${USER}" &>/dev/null; then
     echo ">> Creating user '${USER}'..."
     useradd -m -s /bin/bash "${USER}"
     usermod -aG sudo "${USER}"
+    # Add to the openclaw group (created at build time) so the user can
+    # write into /usr/lib/node_modules/openclaw/dist/extensions/*/node_modules
+    # for plugin runtime-dep installs without resorting to world-writable
+    # paths (which OpenClaw rejects as a security hardening measure).
+    if getent group openclaw >/dev/null 2>&1; then
+        usermod -aG openclaw "${USER}"
+    fi
     SUDOERS_TMP=$(mktemp)
     echo "${USER} ALL=(ALL) NOPASSWD:ALL" > "${SUDOERS_TMP}"
     if visudo -c -f "${SUDOERS_TMP}" >/dev/null; then

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.2] - 2026-04-26
+
+### Fixed
+- **Dashboard unreachable on first boot** — two compounding bugs left the gateway dead and the dashboard returning connection-reset until the user manually ran `openclaw doctor`:
+  1. **Plugin runtime deps could not install.** OpenClaw lazy-installs each bundled plugin's runtime deps (`acpx`, `browser`, `bonjour`, …) by running `npm install` inside `<openclaw>/dist/extensions/<plugin>/`. The image-baked install lives in the system npm prefix (root-owned), so a non-root runtime user hits `EACCES`. We now create an `openclaw` system group at build time, chown the openclaw tree to it with mode `g+rwX` (group writable, *not* world-writable — OpenClaw refuses to load plugins from world-writable paths), and add every runtime user to that group from both the Dockerfile (`claw` build user) and `entrypoint.sh` (dynamic `CLAW_USER`). Verified: 6 plugins load on first boot.
+  2. **`start_gateway` was fooled by transient `gateway install --force` workers.** The shim's `restart` handler called `start_gateway` after `stop_gateway`. The previous `pgrep -f openclaw-gateway` would match the short-lived `openclaw-gateway` worker that `gateway install --force` spawns inside its own process tree, write *that* PID to the PID file, return success without actually spawning a daemon, and the moment the install command finished the gateway vanished. `start_gateway` now anchors on the PID file (idempotent fast path) and, when it does spawn, polls `pgrep -P <launcher>` so it accepts only its own descendant — never an install/update worker.
+
 ## [1.4.1] - 2026-04-24
 
 ### Changed
