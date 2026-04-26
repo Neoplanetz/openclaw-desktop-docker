@@ -398,6 +398,20 @@ if command -v openclaw &>/dev/null; then
                 echo "   (unit registration reported a non-fatal error; continuing)"
         fi
 
+        # Disable the bonjour (mDNS) plugin on first boot. Inside Docker's
+        # bridge network it can't reach a real LAN multicast group, so its
+        # CIAO advertiser gets stuck in `announcing` for ~15s and then
+        # raises an unhandled promise rejection — which in turn brings the
+        # whole gateway HTTP server down right after the next restart.
+        # Symptom: `openclaw setup` ends with "Health check failed: gateway
+        # timeout after 10000ms" and the dashboard becomes unreachable
+        # until the user manually runs `openclaw doctor`. The plugin is
+        # only useful for advertising the gateway over the local network,
+        # which doesn't apply to the typical container deployment.
+        if ! su - "${USER}" -c "openclaw plugins list 2>/dev/null" | grep -q "bonjour.*disabled"; then
+            su - "${USER}" -c "openclaw plugins disable bonjour" >/dev/null 2>&1 || true
+        fi
+
         # ── OpenClaw Browser configuration ────────────────────
         if [ "${OPENCLAW_BROWSER_ENABLED}" = "true" ]; then
             echo ">> Configuring OpenClaw browser (CDP Chrome)..."

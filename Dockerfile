@@ -76,6 +76,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xauth \
     x11-utils \
     software-properties-common \
+    # Codex CLI sandboxes child processes with bubblewrap; without the apt
+    # package, `codex` warns and falls back to a vendored copy.
+    bubblewrap \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ── Browser: Chrome on amd64, Chromium on arm64 ───────────

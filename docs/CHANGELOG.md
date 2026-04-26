@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.4] - 2026-04-27
+
+### Fixed
+- **Dashboard timeout after `openclaw setup` → "Restart"** — when the setup wizard finished and the user picked Restart on the "Gateway service already installed" prompt, OpenClaw's own health check failed with `gateway timeout after 10000ms` and the dashboard stopped responding entirely. Root cause: the bundled **bonjour (mDNS) plugin** can't reach a real LAN multicast group inside Docker's bridge network, so its CIAO advertiser stays in `announcing` for ~15s, then raises an unhandled promise rejection that takes the gateway HTTP server down with it (`Unhandled promise rejection: CIAO ANNOUNCEMENT CANCELLED`). Entrypoint now disables `bonjour` once on first boot — the plugin's only purpose is local-network gateway discovery, which doesn't apply to the typical container deployment. After this, the gateway restarts cleanly in ~3s instead of crashing after ~15s
+
+### Added
+- `bubblewrap` apt package — Codex CLI (`codex`) sandboxes child processes with `bwrap` and previously fell back to a vendored binary while warning at every launch. With the system package present, the warning goes away and Codex uses the standard distro-supplied sandbox
+
 ## [1.4.3] - 2026-04-26
 
 ### Fixed
