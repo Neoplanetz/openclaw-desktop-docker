@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.5] - 2026-04-27
+
+### Fixed
+- **Gateway died when the terminal that ran `openclaw setup` was closed.** User report: setup → "Restart" → dashboard opened from setup's "Open Web UI" worked once, but reopening the dashboard after closing the setup terminal returned `ERR_CONNECTION_REFUSED`. Root cause: the shim spawned the gateway with `nohup … &` from inside the terminal's session. `nohup` ignores SIGHUP, but openclaw's Node runtime reinstalls signal handlers, undoing the ignore. When the terminal sent SIGHUP to its session on close, every process in that session — including the gateway — received it and exited. Verified by reproducing the exact symptom and confirming the gateway's `/proc/<pid>/stat` showed `SID == terminal-bash-pid`. Switching the spawn to `setsid …  < /dev/null` puts the gateway into a brand-new session with no controlling terminal, so terminal SIGHUP can no longer reach it. Verified after fix: `SID == gateway-pid` and the gateway survives terminal close
+
 ## [1.4.4] - 2026-04-27
 
 ### Fixed

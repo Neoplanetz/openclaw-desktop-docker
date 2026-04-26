@@ -119,8 +119,17 @@ start_gateway() {
     fi
     log="${HOME}/.openclaw/gateway.log"
     mkdir -p "${HOME}/.openclaw" 2>/dev/null || true
+    # `setsid` puts the gateway into a brand-new session with no
+    # controlling terminal. Without it, the gateway inherits the shim's
+    # session — and when this shim is invoked by `systemctl --user
+    # restart` from inside an xfce4-terminal (e.g. the `openclaw setup`
+    # wizard's "Restart" choice), closing that terminal sends SIGHUP to
+    # the whole session and kills the gateway too. `nohup` alone is
+    # insufficient because openclaw's Node runtime reinstalls signal
+    # handlers, undoing nohup's SIGHUP-ignore. The < /dev/null redirect
+    # also detaches stdin so no future tty hangup can reach us.
     DISPLAY="$DISPLAY_VAL" XAUTHORITY="$XAUTH" \
-        nohup "$bin" gateway run >> "$log" 2>&1 &
+        setsid "$bin" gateway run >> "$log" 2>&1 < /dev/null &
     launcher=$!
     disown 2>/dev/null || true
 
