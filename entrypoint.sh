@@ -356,7 +356,14 @@ if command -v openclaw &>/dev/null; then
     BOOT_DISPLAY="${BOOT_DISPLAY:-:1}"
     BOOT_XAUTHORITY=$(grep '^XAUTHORITY=' "${OPENCLAW_ENV}" 2>/dev/null | cut -d= -f2)
     BOOT_XAUTHORITY="${BOOT_XAUTHORITY:-/home/${USER}/.Xauthority}"
-    su - "${USER}" -c "DISPLAY='${BOOT_DISPLAY}' XAUTHORITY='${BOOT_XAUTHORITY}' nohup openclaw gateway run >> ${GATEWAY_LOG} 2>&1 &"
+    # `setsid` puts the gateway in a new session with no controlling
+    # terminal, matching the shim's start_gateway path. At boot the
+    # entrypoint runs as PID 1 with no tty, so the old `nohup … &` form
+    # also survived — but kept the gateway in the entrypoint's session,
+    # which would expose it to SIGHUP if entrypoint were ever re-invoked
+    # under a tty (e.g. `docker exec -it … /entrypoint.sh`) or replaced
+    # by a supervisor that exits. Symmetric with commit ce595b8.
+    su - "${USER}" -c "DISPLAY='${BOOT_DISPLAY}' XAUTHORITY='${BOOT_XAUTHORITY}' setsid openclaw gateway run >> ${GATEWAY_LOG} 2>&1 < /dev/null &"
 
     # Poll for the gateway process. Pattern is 'openclaw-gateway' (hyphen),
     # the actual binary name — using 'openclaw gateway' (space) would
@@ -436,7 +443,7 @@ if command -v openclaw &>/dev/null; then
         fi
     else
         echo "Gateway : start failed (log: ${GATEWAY_LOG})"
-        echo "  Manual: nohup openclaw gateway run >> ~/.openclaw/gateway.log 2>&1 & disown"
+        echo "  Manual: setsid openclaw gateway run >> ~/.openclaw/gateway.log 2>&1 < /dev/null & disown"
     fi
 else
     echo "OpenClaw not installed (npm install -g openclaw@latest)"
