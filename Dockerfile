@@ -286,7 +286,7 @@ RUN chmod +x /usr/local/bin/openclaw-sync-display
 # ── systemctl shim (real systemd is not present inside the container) ─
 # Intercepts the `systemctl --user …` calls that OpenClaw makes during
 # `openclaw update` and `openclaw gateway restart` and translates them
-# into direct pkill+nohup management of the gateway process.
+# into direct process management of the gateway process.
 # The real binary is preserved at /usr/bin/systemctl.real for escape.
 COPY scripts/systemctl-shim /usr/local/bin/systemctl-shim
 RUN chmod +x /usr/local/bin/systemctl-shim \

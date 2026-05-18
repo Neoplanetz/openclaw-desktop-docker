@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.6] - 2026-05-18
+
+### Fixed
+- **`systemctl` shim now accepts systemd options before the unit name.** Some valid `systemctl` forms place options such as `--property` or `--no-block` between the command and `openclaw-gateway.service`, or even before the command. The shim previously assumed the unit was always the second positional token, so those calls could return success without applying the intended OpenClaw gateway action or could emit the wrong `show` properties. Argument parsing now identifies the command, unit, and `show --property` options independently of option placement.
+
 ## [1.4.5] - 2026-04-27
 
 ### Fixed

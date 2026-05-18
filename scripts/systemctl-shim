@@ -27,14 +27,71 @@ LOG="/tmp/systemctl-shim.log"
 ARGS=()
 for a in "$@"; do
     case "$a" in
-        --user|--system|--no-pager|--no-page|--quiet) ;;
+        --user|--system|--no-pager|--no-page|--quiet|--no-block) ;;
         *) ARGS+=("$a") ;;
     esac
 done
-set -- ${ARGS[@]+"${ARGS[@]}"}
 
-CMD="${1:-}"
-UNIT="${2:-}"
+is_command() {
+    case "$1" in
+        restart|start|stop|is-active|is-enabled|status|show|cat|enable|disable|daemon-reload|reset-failed|reload|reload-or-restart|kill|preset|mask|unmask) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+CMD=""
+UNIT=""
+SHOW_ARGS=()
+CMD_SEEN=false
+EXPECT_SHOW_PROP=false
+
+for a in "${ARGS[@]}"; do
+    if [ "${CMD_SEEN}" = "false" ]; then
+        if [ "${EXPECT_SHOW_PROP}" = "true" ]; then
+            SHOW_ARGS+=("$a")
+            EXPECT_SHOW_PROP=false
+            continue
+        fi
+
+        if is_command "$a"; then
+            CMD="$a"
+            CMD_SEEN=true
+        elif [ "$a" = "--property" ]; then
+            SHOW_ARGS+=("$a")
+            EXPECT_SHOW_PROP=true
+        elif [[ "$a" == --property=* ]]; then
+            SHOW_ARGS+=("$a")
+        fi
+        continue
+    fi
+
+    if [ "${EXPECT_SHOW_PROP}" = "true" ]; then
+        SHOW_ARGS+=("$a")
+        EXPECT_SHOW_PROP=false
+        continue
+    fi
+
+    case "$a" in
+        --property)
+            SHOW_ARGS+=("$a")
+            EXPECT_SHOW_PROP=true
+            ;;
+        --property=*)
+            SHOW_ARGS+=("$a")
+            ;;
+        --*)
+            ;;
+        *)
+            if [ -z "$UNIT" ]; then
+                UNIT="$a"
+            elif [ "$CMD" = "show" ]; then
+                SHOW_ARGS+=("$a")
+            fi
+            ;;
+    esac
+done
+
+set -- "${SHOW_ARGS[@]}"
 
 # Prefer post-update binary; fall back to baked image binary.
 resolve_openclaw_bin() {
@@ -333,8 +390,6 @@ case "$CMD" in
         esac
         exit 0 ;;
     show)
-        # shift off "show" and the unit name so emit_show_properties sees only flags.
-        shift 2 2>/dev/null || true
         emit_show_properties "$@"
         exit 0 ;;
     cat)
