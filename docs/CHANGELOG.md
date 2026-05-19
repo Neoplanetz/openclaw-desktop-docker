@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.7] - 2026-05-19
+
+### Fixed
+- **`openclaw setup` / `openclaw update` no longer falsely report "Gateway service install failed".** User smoke test on a fresh first-boot of v1.4.6 (OpenClaw 2026.5.12) showed the setup wizard ending with `Gateway service install failed: systemctl restart failed: Command failed: systemctl --user restart openclaw-gateway.service` — even though the dashboard probe later in the same wizard showed `Gateway: reachable`. Root cause: the shim's `start_gateway` polled for the new gateway's `process.title='openclaw-gateway'` rename in a 10s window, which was tuned to OpenClaw 2026.4.x with already-cached plugin runtime-deps. On 2026.5.12 cold boot the rename happens slightly later than 10s in the worst case (plugin runtime-dep `npm install`, first-time module resolution), so the shim returned exit 1 to OpenClaw, but the gateway actually came up healthy a few seconds after that — hence the contradictory "install failed" + later "reachable" pair. Widened the poll window to 30s, matching observed cold-boot worst case with margin.
+
 ## [1.4.6] - 2026-05-18
 
 ### Fixed

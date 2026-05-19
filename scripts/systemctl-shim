@@ -199,8 +199,13 @@ start_gateway() {
     # process tree, which inherently filters out the transient
     # `openclaw-gateway` workers spawned inside `gateway install --force`
     # (their parent is the install command, not our launcher).
+    # 30s covers cold-boot worst case on OpenClaw 2026.5.12+ where plugin
+    # runtime-deps install or first-time module resolution can delay the
+    # `process.title = 'openclaw-gateway'` rename. Earlier 10s window caused
+    # false-failure during `openclaw setup` / `openclaw update` even though
+    # the gateway came up healthy a few seconds later (see CHANGELOG 1.4.7).
     local i p
-    for i in 1 2 3 4 5 6 7 8 9 10; do
+    for i in $(seq 1 30); do
         sleep 1
         if is_live_gateway "$launcher"; then
             echo "$launcher" > "$PID_FILE" 2>/dev/null || true
@@ -213,7 +218,7 @@ start_gateway() {
             fi
         done
     done
-    { echo "[$(date +%H:%M:%S)] start_gateway: timed out after 10s (bin=$bin, launcher=$launcher)" >> "$LOG"; } 2>/dev/null || true
+    { echo "[$(date +%H:%M:%S)] start_gateway: timed out after 30s (bin=$bin, launcher=$launcher)" >> "$LOG"; } 2>/dev/null || true
     return 1
 }
 
