@@ -31,12 +31,12 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 
 | Package | Version |
 |---------|---------|
-| **OpenClaw** | `2026.4.22` |
-| **Claude Code** | `2.1.119` (`@anthropic-ai/claude-code`) |
-| **Codex** | `0.124.0` (`@openai/codex`) |
+| **OpenClaw** | `2026.5.12` |
+| **Claude Code** | `2.1.143` (`@anthropic-ai/claude-code`) |
+| **Codex** | `0.130.0` (`@openai/codex`) |
 | **Node.js** | `v22.22.2` |
-| **Google Chrome** (amd64) | `147.0.7727.116` |
-| **Chromium** (arm64) | `145.0.7632.75` (from `ppa:xtradeb/apps`) |
+| **Google Chrome** (amd64) | `148.0.7778.167` |
+| **Chromium** (arm64) | `148.0.7778.167` (from `ppa:xtradeb/apps`) |
 
 > Ubuntu 24.04's own `chromium-browser` package is a snap-transition stub that does not run inside Docker, so arm64 builds pull a real `.deb` from the `xtradeb/apps` PPA.
 
