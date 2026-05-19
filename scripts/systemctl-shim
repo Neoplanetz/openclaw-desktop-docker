@@ -340,10 +340,70 @@ emit_show_properties() {
     done
 }
 
+# Decide whether a `systemctl restart` should be served by SIGUSR1
+# (OpenClaw's in-process restart, supported in 2026.5+) or by full
+# stop+spawn. SIGUSR1 is preferred because it:
+#   - preserves the bound port (no EADDRINUSE race with OpenClaw's own
+#     container-aware in-process restart logic; observed during
+#     `openclaw setup` against 2026.5.x),
+#   - preserves Control-UI WebSocket sessions and the per-browser
+#     device-pairing approvals, so the dashboard doesn't re-prompt for
+#     pairing on every config write,
+#   - is instant (no 30s polling for `process.title` rename).
+# Full stop+spawn is still required when:
+#   - no gateway is running (cold start / dead daemon),
+#   - the openclaw binary on disk has been replaced since the running
+#     gateway started — typically right after `openclaw update`'s npm
+#     install — because SIGUSR1 stays inside the old process image and
+#     a re-exec is the only way to load the new code.
+restart_gateway() {
+    local pid bin bin_mtime proc_start
+    pid=""
+    if [ -f "$PID_FILE" ]; then
+        pid=$(cat "$PID_FILE" 2>/dev/null || true)
+    fi
+
+    if [ -z "$pid" ] || ! is_live_gateway "$pid"; then
+        stop_gateway
+        start_gateway
+        return $?
+    fi
+
+    bin=$(resolve_openclaw_bin)
+    # `stat -L` follows the npm bin symlink to the real dist/index.js,
+    # which is what npm rewrites on `openclaw update`. `/proc/$pid` mtime
+    # is set at process creation, so a binary mtime greater than the
+    # process start time means the on-disk code is newer than what's
+    # loaded.
+    bin_mtime=$(stat -L -c %Y "$bin" 2>/dev/null || echo 0)
+    proc_start=$(stat -c %Y "/proc/$pid" 2>/dev/null || echo 0)
+    if [ "$bin_mtime" -gt "$proc_start" ]; then
+        { echo "[$(date +%H:%M:%S)] restart: binary newer than gateway PID $pid (bin=$bin_mtime proc=$proc_start) -- full restart" >> "$LOG"; } 2>/dev/null || true
+        stop_gateway
+        start_gateway
+        return $?
+    fi
+
+    if kill -USR1 "$pid" 2>/dev/null; then
+        # OpenClaw re-binds its HTTP server in-process; give it a beat
+        # and then confirm the same PID is still the live gateway.
+        sleep 1
+        if is_live_gateway "$pid"; then
+            { echo "[$(date +%H:%M:%S)] restart: SIGUSR1 in-process restart of PID $pid succeeded" >> "$LOG"; } 2>/dev/null || true
+            return 0
+        fi
+        { echo "[$(date +%H:%M:%S)] restart: SIGUSR1 sent but PID $pid no longer live -- falling back to spawn" >> "$LOG"; } 2>/dev/null || true
+    fi
+
+    stop_gateway
+    start_gateway
+    return $?
+}
+
 case "$CMD" in
     restart)
         case "$UNIT" in
-            *openclaw-gateway*) stop_gateway; start_gateway; exit $? ;;
+            *openclaw-gateway*) restart_gateway; exit $? ;;
         esac
         exit 0 ;;
     start)

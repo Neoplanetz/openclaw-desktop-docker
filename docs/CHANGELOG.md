@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.9] - 2026-05-19
+
+### Fixed
+- **`systemctl restart` no longer races with OpenClaw's container-aware in-process restart.** Root cause of recurring `Gateway service install failed: systemctl restart failed` during `openclaw setup` and recurring update / dashboard breakage against OpenClaw 2026.5.x: our shim's `restart` path did a blind `stop_gateway` + `start_gateway` (designed for 2026.4.x). 2026.5.x prefers `SIGUSR1` in-process restart inside containers (`restart mode: in-process restart (container: use in-process restart to keep PID 1 alive)`), so the two paths fought over port 18789 and we observed `EADDRINUSE: address already in use 0.0.0.0:18789 — pid X neovis: openclaw (*:18789)` right after the wizard's gateway-install step. The shim's `restart` is now SIGUSR1-first: it sends `SIGUSR1` to the live gateway and exits 0 — which keeps the port bound, preserves Control-UI WebSocket sessions, and preserves per-browser device-pairing approvals so the dashboard doesn't re-prompt for pairing on every config write. The full `stop_gateway` + `start_gateway` path is reserved for the two cases that genuinely need a new process image: (a) no gateway is running, and (b) the openclaw binary on disk is newer than the running gateway's start time (which is exactly what `openclaw update` produces). Detection: compare `stat -L -c %Y $(resolve_openclaw_bin)` against `stat -c %Y /proc/$pid` — symlink-followed binary mtime vs process start time.
+
 ## [1.4.8] - 2026-05-19
 
 ### Removed
