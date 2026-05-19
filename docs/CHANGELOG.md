@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.8] - 2026-05-19
+
+### Removed
+- **OpenAI Codex CLI (`@openai/codex`) no longer bundled.** Shipping the Codex CLI by default nudged users toward picking "ChatGPT Login" during `openclaw setup`, which installs the `@openclaw/codex` plugin at runtime. That plugin currently hits `TypeError: (0 , _agentHarnessRuntime.hasBeforeToolCallPolicy) is not a function` against OpenClaw 2026.5.12, breaking every chat turn (dashboard + Telegram both surface the same error). The mismatch is upstream — the plugin imports a runtime export that the bundled OpenClaw core does not provide — so until OpenClaw + plugin versions resync, the safer default is to not pre-install the Codex CLI. **Claude Code (`@anthropic-ai/claude-code`) stays bundled** as the supported agent CLI. Users who still want the Codex CLI can install it themselves: `npm install -g @openai/codex`.
+- **`bubblewrap` apt package no longer installed.** It was added in v1.4.4 solely to silence Codex CLI's vendored-sandbox warning. With Codex removed, no remaining image component needs `bwrap`. Saves ~30 MB and one apt package surface.
+- `CODEX_VERSION` build arg and `/etc/codex-version` file (only `CLAUDE_CODE_VERSION` / `/etc/claude-code-version` remain).
+
 ## [1.4.7] - 2026-05-19
 
 ### Fixed

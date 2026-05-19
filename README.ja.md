@@ -36,7 +36,7 @@ Node.js 22、OpenClaw、Google Chrome、デフォルトのGateway設定がすべ
 | **ブラウザ** | amd64: Google Chrome / arm64: Chromium（Google が `chrome-stable` の arm64 版を配布しないため Chromium で代替。OpenClaw の CDP 自動化はどちらでも同じ動作）。両方とも `--no-sandbox` ラッパー付き。 |
 | **ランタイム** | Node.js 22（NodeSource） |
 | **OpenClaw** | npmの最新版、デフォルト設定済み、Gateway自動起動、スキルインストール用ユーザーローカルnpm prefix |
-| **エージェントCLI** | `claude`（[Claude Code](https://docs.claude.com/en/docs/claude-code/overview)）と `codex`（[OpenAI Codex](https://github.com/openai/codex)）を npm でプリインストール。認証情報はイメージに含まれず、初回実行時に `claude` または `codex` でログイン。ビルド時 ARG `CLAUDE_CODE_VERSION` / `CODEX_VERSION` でバージョン固定可能。 |
+| **エージェントCLI** | `claude`（[Claude Code](https://docs.claude.com/en/docs/claude-code/overview)）を npm でプリインストール。認証情報はイメージに含まれず、初回実行時に `claude` でログイン。ビルド時 ARG `CLAUDE_CODE_VERSION` でバージョン固定可能。（OpenAI Codex CLI は以前バンドルしていましたが、OpenClaw コア/プラグイン API の不整合のため v1.4.8 で削除。必要な場合は `npm install -g @openai/codex` で各自インストールしてください。） |
 | **デスクトップショートカット** | OpenClawセットアップ、ダッシュボード、ターミナル |
 
 ## ポート

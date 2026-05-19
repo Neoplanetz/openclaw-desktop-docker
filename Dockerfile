@@ -76,9 +76,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xauth \
     x11-utils \
     software-properties-common \
-    # Codex CLI sandboxes child processes with bubblewrap; without the apt
-    # package, `codex` warns and falls back to a vendored copy.
-    bubblewrap \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ── Browser: Chrome on amd64, Chromium on arm64 ───────────
@@ -189,20 +186,26 @@ RUN npm install -g openclaw@${OPENCLAW_VERSION} \
     && chmod -R g+rwX "${OC_ROOT}" \
     && echo "OpenClaw ${OC_VER} installed"
 
-# ── Agent CLIs: Claude Code + OpenAI Codex ──
-# OpenClaw can delegate turns to these CLIs when the user authenticates
-# them separately at runtime. Installing globally via npm lands them in
+# ── Agent CLI: Claude Code ──
+# OpenClaw can delegate turns to Claude Code when the user authenticates
+# it at runtime. Installing globally via npm lands it in
 # /var/openclaw-npm/bin (already on PATH) so every runtime user shares
-# the same binaries without relying on per-home installers. No
-# credentials are baked — `claude`/`codex` prompt for login on first use.
+# the same binary without relying on per-home installers. No credentials
+# are baked — `claude` prompts for login on first use.
+#
+# OpenAI Codex CLI was previously bundled here too. Removed because the
+# OpenClaw "ChatGPT Login" onboarding path installs the @openclaw/codex
+# plugin at runtime, which has been hitting an API mismatch with
+# OpenClaw 2026.5.12 (`hasBeforeToolCallPolicy is not a function`).
+# Pre-shipping the Codex CLI tempted users into picking that broken
+# path during setup. Users who still want the Codex CLI can install it
+# themselves: `npm install -g @openai/codex` (and `apt install bubblewrap`
+# to silence the vendored-sandbox warning).
 ARG CLAUDE_CODE_VERSION=latest
-ARG CODEX_VERSION=latest
-RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} @openai/codex@${CODEX_VERSION} \
+RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} \
     && CC_VER=$(npm list -g @anthropic-ai/claude-code --depth=0 2>/dev/null | grep -oP '@anthropic-ai/claude-code@\K[^\s]+' || echo 'unknown') \
-    && CX_VER=$(npm list -g @openai/codex --depth=0 2>/dev/null | grep -oP '@openai/codex@\K[^\s]+' || echo 'unknown') \
     && echo "${CC_VER}" > /etc/claude-code-version \
-    && echo "${CX_VER}" > /etc/codex-version \
-    && echo "Claude Code ${CC_VER} + Codex ${CX_VER} installed"
+    && echo "Claude Code ${CC_VER} installed"
 
 # ── Verify vncpasswd is available ────────────────────────
 RUN which vncpasswd || (which tigervncpasswd && ln -sf $(which tigervncpasswd) /usr/local/bin/vncpasswd) \

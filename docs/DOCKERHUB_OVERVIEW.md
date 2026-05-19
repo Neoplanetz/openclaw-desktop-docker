@@ -24,7 +24,7 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 | **Browser** | Google Chrome (amd64) / Chromium (arm64) |
 | **Runtime** | Node.js 22 |
 | **OpenClaw** | Latest from npm, Gateway auto-starts on boot, user-local npm prefix for skill installs |
-| **Agent CLIs** | `claude` (Claude Code) + `codex` (OpenAI Codex) pre-installed — run `claude` or `codex` to authenticate on first use |
+| **Agent CLI** | `claude` (Claude Code) pre-installed — run `claude` to authenticate on first use |
 | **Desktop Shortcuts** | OpenClaw Setup, Dashboard, Terminal |
 
 ## Bundled Versions
@@ -33,7 +33,6 @@ Everything is pre-installed — Node.js 22, OpenClaw, Google Chrome, and a defau
 |---------|---------|
 | **OpenClaw** | `2026.5.12` |
 | **Claude Code** | `2.1.143` (`@anthropic-ai/claude-code`) |
-| **Codex** | `0.130.0` (`@openai/codex`) |
 | **Node.js** | `v22.22.2` |
 | **Google Chrome** (amd64) | `148.0.7778.167` |
 | **Chromium** (arm64) | `148.0.7778.167` (from `ppa:xtradeb/apps`) |
